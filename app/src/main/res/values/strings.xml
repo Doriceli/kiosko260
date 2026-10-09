@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Kiosko Video QR</string>
+    <string name="qr_description">Código QR para descargar el video</string>
+    <string name="auto_process">Editar automáticamente los videos que lleguen por Quick Share</string>
+    <string name="music_label">Canción</string>
+    <string name="music_random">🎲 Aleatoria</string>
+    <string name="music_missing">No hay canciones. Copia archivos .mp3 en app/src/main/assets/music o en la carpeta de personalización (ver abajo).</string>
+    <string name="pick_video">Elegir un video manualmente</string>
+    <string name="network_ok">Servidor activo en http://%1$s:%2$d — los clientes deben estar en la misma red Wi-Fi.</string>
+    <string name="network_missing">⚠️ Sin Wi-Fi ni hotspot: conecta el kiosko a una red o activa el hotspot para que el QR funcione.</string>
+    <string name="custom_folder_info">Para cambiar marco/logo/música sin recompilar copia marco.png, logo.png y music/*.mp3 en:\n%1$s</string>
+</resources>
