@@ -1,15 +1,34 @@
 package com.kiosko260.videoqr
 
+import android.graphics.Color
+
 /** Ajustes del kiosko. Cambia aquí los valores y vuelve a compilar. */
 object Config {
     /** Velocidad del video: 0.5 = la mitad de rápido (cámara lenta x2), 0.25 = x4. */
     const val SLOW_MOTION_SPEED = 0.5f
 
+    /** Texto de la franja inferior del marco. */
+    const val HASHTAG = "#etu2026"
+
+    /**
+     * Carpeta de insumos dentro de "Almacenamiento interno":
+     *  - [LOGO_FILE] (marco.png) se usa como logo arriba a la izquierda.
+     *  - Todos los .mp3 de la carpeta se usan como música.
+     */
+    const val INSUMOS_FOLDER = "Download/INSUMOS"
+    const val LOGO_FILE = "marco.png"
+
     /** Ancho del logo (esquina superior izquierda) como fracción del ancho del video. */
     const val LOGO_WIDTH_FRACTION = 0.30f
 
     /** Separación del logo respecto a los bordes, como fracción del ancho del video. */
-    const val LOGO_MARGIN_FRACTION = 0.04f
+    const val LOGO_MARGIN_FRACTION = 0.06f
+
+    /** Colores de la marca: azul, dorado y amarillo oro. */
+    val AZUL = Color.parseColor("#0B2A6F")
+    val AZUL_CLARO = Color.parseColor("#1E4FBF")
+    val DORADO = Color.parseColor("#C9A227")
+    val AMARILLO_ORO = Color.parseColor("#FFD700")
 
     /** El lado corto del video final no superará estos píxeles (1080 = Full HD). */
     const val MAX_SHORT_SIDE_PX = 1080
@@ -27,8 +46,7 @@ object Config {
     /** Los videos editados se borran pasado este tiempo para no llenar la memoria. */
     const val KEEP_OUTPUT_HOURS = 48L
 
-    /** Archivos dentro de assets/ (o de la carpeta de personalización, que tiene prioridad). */
-    const val FRAME_FILE = "marco.png"
-    const val LOGO_FILE = "logo.png"
+    /** Respaldo dentro del APK (assets/) si no se encuentra nada en la carpeta de insumos. */
+    const val FALLBACK_LOGO_ASSET = "logo.png"
     const val MUSIC_DIR = "music"
 }

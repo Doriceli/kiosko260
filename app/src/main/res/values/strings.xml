@@ -5,9 +5,13 @@
     <string name="auto_process">Editar automáticamente los videos que lleguen por Quick Share</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>
-    <string name="music_missing">No hay canciones. Copia archivos .mp3 en app/src/main/assets/music o en la carpeta de personalización (ver abajo).</string>
+    <string name="music_missing">No se encontraron canciones. Copia los .mp3 en Almacenamiento interno &gt; Download &gt; INSUMOS y da permiso de \"Música y audio\" a la app.</string>
+    <string name="counter_today">Videos hoy: %1$d</string>
+    <string name="preview_label">Video #%1$d · %2$s</string>
+    <string name="preview_description">Vista previa del video a compartir</string>
+    <string name="scan_me">Escanéame 📲</string>
     <string name="pick_video">Elegir un video manualmente</string>
     <string name="network_ok">Servidor activo en http://%1$s:%2$d — los clientes deben estar en la misma red Wi-Fi.</string>
     <string name="network_missing">⚠️ Sin Wi-Fi ni hotspot: conecta el kiosko a una red o activa el hotspot para que el QR funcione.</string>
-    <string name="custom_folder_info">Para cambiar marco/logo/música sin recompilar copia marco.png, logo.png y music/*.mp3 en:\n%1$s</string>
+    <string name="custom_folder_info">Logo y canciones: Almacenamiento interno &gt; Download &gt; INSUMOS (marco.png y archivos .mp3).\nAlternativa: %1$s</string>
 </resources>

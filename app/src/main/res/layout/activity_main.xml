@@ -2,7 +2,7 @@
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#111111"
+    android:background="@color/azul_oscuro"
     android:fillViewport="true">
 
     <LinearLayout
@@ -12,12 +12,41 @@
         android:orientation="vertical"
         android:padding="20dp">
 
+        <!-- Encabezado: hashtag y contador del día -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="14dp">
+
+            <TextView
+                android:id="@+id/hashtag"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textColor="@color/amarillo_oro"
+                android:textSize="28sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/counter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="end"
+                android:textColor="@color/dorado"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
         <TextView
             android:id="@+id/status"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
             android:gravity="center"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/blanco"
             android:textSize="22sp"
             android:textStyle="bold" />
 
@@ -28,24 +57,82 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
             android:max="100"
+            android:progressTint="@color/amarillo_oro"
             android:visibility="gone" />
 
-        <ImageView
-            android:id="@+id/qr"
-            android:layout_width="320dp"
-            android:layout_height="320dp"
+        <!-- Vista previa del video a un lado del QR -->
+        <LinearLayout
+            android:id="@+id/resultRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:layout_marginTop="20dp"
-            android:background="#FFFFFF"
-            android:contentDescription="@string/qr_description"
-            android:padding="8dp"
-            android:scaleType="fitCenter" />
+            android:baselineAligned="false"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_card"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="8dp">
+
+                <ImageView
+                    android:id="@+id/preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="280dp"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/preview_description"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:id="@+id/previewLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:textColor="@color/amarillo_oro"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/qr"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:background="@drawable/bg_qr"
+                    android:contentDescription="@string/qr_description"
+                    android:padding="10dp"
+                    android:scaleType="fitCenter" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:text="@string/scan_me"
+                    android:textColor="@color/dorado"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </LinearLayout>
 
         <TextView
             android:id="@+id/url"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textColor="#BBBBBB"
+            android:textColor="@color/texto_suave"
             android:textIsSelectable="true"
             android:textSize="14sp" />
 
@@ -56,28 +143,30 @@
             android:layout_marginTop="24dp"
             android:checked="true"
             android:text="@string/auto_process"
-            android:textColor="#FFFFFF" />
+            android:textColor="@color/blanco" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="@string/music_label"
-            android:textColor="#FFFFFF" />
+            android:textColor="@color/dorado"
+            android:textStyle="bold" />
 
         <Spinner
             android:id="@+id/musicSpinner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="#333333"
-            android:minHeight="48dp" />
+            android:background="@drawable/bg_card"
+            android:minHeight="48dp"
+            android:popupBackground="@color/azul" />
 
         <TextView
             android:id="@+id/musicWarning"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/music_missing"
-            android:textColor="#FFB300"
+            android:textColor="@color/amarillo_oro"
             android:visibility="gone" />
 
         <Button
@@ -85,14 +174,17 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="@string/pick_video" />
+            android:backgroundTint="@color/amarillo_oro"
+            android:text="@string/pick_video"
+            android:textColor="@color/azul_oscuro"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/networkInfo"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:textColor="#BBBBBB"
+            android:textColor="@color/texto_suave"
             android:textSize="13sp" />
 
         <TextView
@@ -100,7 +192,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:textColor="#777777"
+            android:textColor="@color/texto_suave"
             android:textSize="12sp" />
     </LinearLayout>
 </ScrollView>

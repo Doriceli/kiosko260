@@ -3,6 +3,7 @@ package com.kiosko260.videoqr
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -22,6 +23,8 @@ import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import com.kiosko260.videoqr.databinding.ActivityMainBinding
 import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(UnstableApi::class)
 class MainActivity : AppCompatActivity() {
@@ -32,13 +35,19 @@ class MainActivity : AppCompatActivity() {
     private var shownUrl: String? = null
     private var tracks: List<MusicTrack> = emptyList()
 
-    private val videoPermission =
-        if (Build.VERSION.SDK_INT >= 33) Manifest.permission.READ_MEDIA_VIDEO
-        else Manifest.permission.READ_EXTERNAL_STORAGE
+    /** Videos (Quick Share) + audio e imágenes (canciones y logo de Download/INSUMOS). */
+    private val mediaPermissions =
+        if (Build.VERSION.SDK_INT >= 33) arrayOf(
+            Manifest.permission.READ_MEDIA_VIDEO,
+            Manifest.permission.READ_MEDIA_AUDIO,
+            Manifest.permission.READ_MEDIA_IMAGES,
+        ) else arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
 
-    private val requestPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) startWatcher() else binding.autoSwitch.isChecked = false
+    private val requestPermissions =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            setupMusicSpinner() // ya se pueden leer las canciones de INSUMOS
+            val videoGranted = result[mediaPermissions.first()] == true || hasPermission(mediaPermissions.first())
+            if (videoGranted) startWatcher() else binding.autoSwitch.isChecked = false
         }
 
     private val pickVideo =
@@ -62,6 +71,7 @@ class MainActivity : AppCompatActivity() {
         binding.autoSwitch.setOnCheckedChangeListener { _, checked ->
             if (checked) ensurePermissionAndWatch() else stopWatcher()
         }
+        binding.hashtag.text = Config.HASHTAG
         setupMusicSpinner()
         binding.folderInfo.text = getString(R.string.custom_folder_info, app.customization.folder.absolutePath)
 
@@ -83,6 +93,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         app.startServer()
+        app.refreshCounter()
         setupMusicSpinner() // por si se copiaron canciones nuevas por USB
         val ip = NetworkUtils.localIpAddress()
         binding.networkInfo.text =
@@ -99,6 +110,7 @@ class MainActivity : AppCompatActivity() {
         binding.status.text = if (state.pending > 1) {
             "${state.status}  (${state.pending - 1} en cola)"
         } else state.status
+        binding.counter.text = getString(R.string.counter_today, state.todayCount)
 
         binding.progress.visibility = if (state.progress != null) View.VISIBLE else View.GONE
         binding.progress.progress = state.progress ?: 0
@@ -108,6 +120,12 @@ class MainActivity : AppCompatActivity() {
             if (state.lastUrl != null) {
                 binding.qr.setImageBitmap(QrCode.create(state.lastUrl))
                 binding.url.text = state.lastUrl
+                binding.preview.setImageBitmap(state.lastThumbnail?.let(BitmapFactory::decodeFile))
+                binding.previewLabel.text = getString(
+                    R.string.preview_label, state.lastNumber,
+                    LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")),
+                )
+                binding.resultRow.visibility = View.VISIBLE
             }
         }
     }
@@ -139,12 +157,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun hasPermission(permission: String) =
+        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
     private fun ensurePermissionAndWatch() {
-        if (!binding.autoSwitch.isChecked) return
-        if (ContextCompat.checkSelfPermission(this, videoPermission) == PackageManager.PERMISSION_GRANTED) {
+        val missing = mediaPermissions.filterNot(::hasPermission)
+        if (missing.isNotEmpty()) {
+            requestPermissions.launch(missing.toTypedArray())
+        } else if (binding.autoSwitch.isChecked) {
             startWatcher()
-        } else {
-            requestPermission.launch(videoPermission)
         }
     }
 

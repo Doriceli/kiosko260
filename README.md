@@ -3,7 +3,7 @@
 App para un celular/tablet "kiosko" que:
 
 1. **Recibe videos por Quick Share** (los detecta solo en cuanto llegan).
-2. **Los edita**: marco (`marco.png`) sobre todo el video, logo (`logo.png`) mediano arriba a la izquierda, **cámara lenta** (x0.5) y **música** en lugar del audio original.
+2. **Los edita**: marco azul/dorado con **#etu2026**, logo (`marco.png` de `Download/INSUMOS`) mediano arriba a la izquierda, **cámara lenta** (x0.5) y **música** en lugar del audio original.
 3. **Muestra un QR**: el invitado lo escanea con su celular, ve el video, lo descarga y lo sube a Instagram, TikTok, WhatsApp, etc.
 
 Todo pasa dentro del celular (edición con [Media3 Transformer](https://developer.android.com/media/media3/transformer), servidor web local con NanoHTTPD y QR con ZXing). No hace falta pagar servidores ni tener internet: basta con una red Wi-Fi local.
@@ -31,18 +31,23 @@ Para generar un APK e instalarlo en otros equipos: **Build → Build App Bundle(
 
 ## 3. Qué tienes que editar
 
-### a) El marco y el logo
-Sustituye estos archivos (ya traen un ejemplo para que puedas probar):
+### a) Logo y canciones → carpeta `Download/INSUMOS` del celular
+En el celular kiosko, en **Almacenamiento interno > Download > INSUMOS** coloca:
 
-- `app/src/main/assets/marco.png` → **PNG con el centro transparente**. Diséñalo en **1080 × 1920** (vertical) si los videos son verticales; se estira al tamaño del video.
-- `app/src/main/assets/logo.png` → PNG (con fondo transparente si quieres). Se coloca arriba a la izquierda ocupando el 30 % del ancho.
+- `marco.png` → se usa como **logo** arriba a la izquierda (30 % del ancho del video).
+- Tus archivos **.mp3** (los 3 que quieras) → son las canciones que aparecen en la app (o "🎲 Aleatoria").
+  - Truco: si el archivo se llama `cancion@52.mp3`, la música empieza en el segundo 52 (directo al coro).
+  - La canción se recorta para durar exactamente lo mismo que el video en cámara lenta (si es más corta, se repite).
 
-### b) La música
-Copia tus canciones (`.mp3`, `.m4a`…) en `app/src/main/assets/music/`.
+La app pide permiso de **Videos**, **Música y audio** y **Fotos e imágenes**: acepta los tres (elige "Permitir todo"); sin ellos no puede leer la carpeta INSUMOS y el video queda sin música.
 
-- En la app eliges la canción o "🎲 Aleatoria".
-- Truco: si el archivo se llama `cancion@52.mp3`, la música empieza en el segundo 52 (directo al coro).
-- La canción se repite o se corta para durar exactamente lo mismo que el video.
+### b) El marco (#etu2026)
+El marco ya no es una imagen: la app lo dibuja en **azul, dorado y amarillo oro**, con la franja inferior y el hashtag **#etu2026**. Para cambiar el texto o los colores edita `HASHTAG`, `AZUL`, `DORADO` y `AMARILLO_ORO` en `Config.kt`.
+
+### Pantalla del kiosko
+- Arriba: el hashtag y el **contador de videos de hoy** (se reinicia solo cada día).
+- Al terminar cada video: **vista previa** (fotograma del video, con su número "Video #N · hora") **al lado del QR**, para que cada invitado identifique el suyo.
+- La página que abre el QR usa los mismos colores y muestra la miniatura como portada.
 
 > ⚠️ **Importante sobre la música "viral" de YouTube (Elton John, Taylor Swift…)**
 > - Descargar audio de YouTube **va contra sus términos de uso**, y esas canciones tienen derechos de autor. Si tu kiosko es un negocio (eventos, bodas, fiestas), usarlas sin licencia puede traerte problemas.
@@ -57,16 +62,17 @@ Copia tus canciones (`.mp3`, `.m4a`…) en `app/src/main/assets/music/`.
 | Ajuste | Por defecto | Significado |
 |---|---|---|
 | `SLOW_MOTION_SPEED` | `0.5f` | 0.5 = la mitad de rápido; 0.25 = 4 veces más lento. |
+| `HASHTAG` | `#etu2026` | Texto de la franja inferior del marco. |
+| `INSUMOS_FOLDER` | `Download/INSUMOS` | Carpeta con el logo (`marco.png`) y las canciones. |
 | `LOGO_WIDTH_FRACTION` | `0.30f` | Tamaño del logo (30 % del ancho). |
-| `LOGO_MARGIN_FRACTION` | `0.04f` | Separación del logo respecto a los bordes. |
+| `LOGO_MARGIN_FRACTION` | `0.06f` | Separación del logo respecto a los bordes. |
 | `QUICK_SHARE_FOLDER_LIKE` | `%Quick Share%` | Carpeta que se vigila. Samsung usa `Download/Quick Share/`. **En Pixel/Motorola/Xiaomi, Quick Share guarda en `Download/`: cámbialo a `Download/%`.** |
 | `MAX_SHORT_SIDE_PX` | `1080` | Resolución máxima (Full HD). |
 | `KEEP_OUTPUT_HOURS` | `48` | Los videos editados se borran pasado este tiempo. |
 
-### d) Cambiar marco/logo/música sin recompilar
-La app también busca los archivos en
-`Android/data/com.kiosko260.videoqr/files/personalizacion/` (`marco.png`, `logo.png`, `music/*.mp3`).
-Copia ahí los archivos por USB desde la PC y tienen prioridad sobre los del APK. La ruta exacta se muestra al pie de la pantalla de la app.
+### d) Carpeta alternativa
+Si no se encuentra nada en INSUMOS, la app también busca en
+`Android/data/com.kiosko260.videoqr/files/personalizacion/` (`marco.png`, `music/*.mp3`) y, por último, en los assets del APK.
 
 ## 4. Preparar el kiosko el día del evento
 
@@ -109,7 +115,7 @@ Si algún equipo no detecta automáticamente los videos, hay dos alternativas:
 | El QR no abre en el celular del invitado | No están en la misma red, o la red tiene aislamiento de clientes. Usa el hotspot del kiosko. |
 | En iPhone no se guarda en la galería | Safari lo guarda en Archivos → Descargas; desde ahí "Compartir → Guardar video". |
 | Error al editar | Videos 4K/HDR muy largos pueden fallar en equipos de gama baja; graba en 1080p. Revisa el Logcat (filtro `KioskoApp`). |
-| Sin música | No hay archivos en `assets/music/` ni en la carpeta de personalización. |
+| Sin música | Revisa que los .mp3 estén en `Download/INSUMOS` y que la app tenga el permiso "Música y audio" (Ajustes → Apps → Kiosko Video QR → Permisos). |
 
 ## 7. Ideas para después
 
@@ -123,8 +129,9 @@ Si algún equipo no detecta automáticamente los videos, hay dos alternativas:
 |---|---|
 | `Config.kt` | Todos los ajustes. |
 | `QuickShareWatcher.kt` | Vigila MediaStore y avisa cuando llega un video nuevo a la carpeta de Quick Share. |
-| `VideoProcessor.kt` | Edición con Media3: `SpeedChangeEffect` (cámara lenta), `Presentation` (tamaño), `OverlayEffect` (marco + logo) y una secuencia de audio en bucle con la canción. |
-| `Customization.kt` | Carga marco, logo y canciones (assets o carpeta de personalización). |
+| `VideoProcessor.kt` | Edición con Media3: `SpeedChangeEffect` (cámara lenta), `Presentation` (tamaño), `OverlayEffect` (marco + logo), la canción recortada a la duración final y la miniatura. |
+| `DailyCounter.kt` | Contador de videos por día. |
+| `Customization.kt` | Carga el logo y las canciones de `Download/INSUMOS` (o carpetas de respaldo). |
 | `VideoServer.kt` | Servidor web local (página de descarga y archivo MP4 con soporte de *Range* para iPhone). |
 | `QrCode.kt` / `NetworkUtils.kt` | Genera el QR y averigua la IP local del kiosko. |
 | `KioskoApp.kt` | Cola de edición (un video a la vez) y arranque del servidor. |

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -23,6 +24,9 @@ data class KioskState(
     val progress: Int? = null,
     val pending: Int = 0,
     val lastUrl: String? = null,
+    val lastThumbnail: String? = null,
+    val lastNumber: Int = 0,
+    val todayCount: Int = 0,
 )
 
 /**
@@ -41,6 +45,7 @@ class KioskoApp : Application() {
         private set
     lateinit var customization: Customization
         private set
+    private lateinit var counter: DailyCounter
     private var server: VideoServer? = null
 
     /** null = canción aleatoria. */
@@ -50,6 +55,8 @@ class KioskoApp : Application() {
         super.onCreate()
         outputDir = File(getExternalFilesDir(null), "editados").apply { mkdirs() }
         customization = Customization(this)
+        counter = DailyCounter(this)
+        refreshCounter()
         deleteOldVideos()
         startServer()
         scope.launch { processQueue() }
@@ -58,6 +65,11 @@ class KioskoApp : Application() {
     fun enqueue(uri: Uri) {
         _state.update { it.copy(pending = it.pending + 1) }
         queue.trySend(uri)
+    }
+
+    /** Vuelve a leer el contador (a medianoche pasa a 0). */
+    fun refreshCounter() {
+        _state.update { it.copy(todayCount = counter.today()) }
     }
 
     fun startServer() {
@@ -79,9 +91,13 @@ class KioskoApp : Application() {
                 it.copy(status = "Editando video" + (track?.let { t -> " con «${t.title}»" } ?: "") + "…", progress = 0)
             }
             try {
-                processor.process(uri, track, File(outputDir, "$id.mp4")) { p ->
+                val video = processor.process(uri, track, File(outputDir, "$id.mp4")) { p ->
                     _state.update { it.copy(progress = p) }
                 }
+                val thumbnail = withContext(Dispatchers.IO) {
+                    processor.createThumbnail(video, File(outputDir, "$id.jpg"))
+                }
+                val number = counter.increment()
                 val url = shareUrl(id)
                 _state.update {
                     it.copy(
@@ -89,6 +105,9 @@ class KioskoApp : Application() {
                         else "Video listo, pero el kiosko no está conectado a Wi-Fi/hotspot",
                         progress = null,
                         lastUrl = url ?: it.lastUrl,
+                        lastThumbnail = thumbnail?.absolutePath,
+                        lastNumber = number,
+                        todayCount = number,
                     )
                 }
             } catch (e: Exception) {
