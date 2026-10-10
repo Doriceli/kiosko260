@@ -18,6 +18,7 @@ import androidx.media3.effect.BitmapOverlay
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.Presentation
 import androidx.media3.effect.SpeedChangeEffect
+import androidx.media3.effect.TextureOverlay
 import androidx.media3.transformer.Composition
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
@@ -61,7 +62,7 @@ class VideoProcessor(private val context: Context) {
             Presentation.createForWidthAndHeight(width, height, Presentation.LAYOUT_SCALE_TO_FIT),
         )
         if (overlay != null) {
-            videoEffects += OverlayEffect(ImmutableList.of(BitmapOverlay.createStaticBitmapOverlay(overlay)))
+            videoEffects += OverlayEffect(ImmutableList.of<TextureOverlay>(BitmapOverlay.createStaticBitmapOverlay(overlay)))
         }
 
         val video = EditedMediaItem.Builder(MediaItem.fromUri(input))
