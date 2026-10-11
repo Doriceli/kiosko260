@@ -1,198 +1,293 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/azul_oscuro"
-    android:fillViewport="true">
+    android:background="@drawable/bg_screen"
+    android:orientation="vertical">
 
+    <!-- Encabezado: hashtag y contador del día -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:orientation="vertical"
-        android:padding="20dp">
-
-        <!-- Encabezado: hashtag y contador del día -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_card"
-            android:gravity="center_vertical"
-            android:orientation="horizontal"
-            android:padding="14dp">
-
-            <TextView
-                android:id="@+id/hashtag"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textColor="@color/amarillo_oro"
-                android:textSize="28sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/counter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:gravity="end"
-                android:textColor="@color/dorado"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="20dp">
 
         <TextView
-            android:id="@+id/status"
-            android:layout_width="match_parent"
+            android:id="@+id/hashtag"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center"
+            android:layout_weight="1"
+            android:rotation="-3"
+            android:shadowColor="@color/coral"
+            android:shadowDy="4"
+            android:shadowRadius="1"
             android:textColor="@color/blanco"
-            android:textSize="22sp"
+            android:textSize="34sp"
             android:textStyle="bold" />
 
-        <ProgressBar
-            android:id="@+id/progress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:max="100"
-            android:progressTint="@color/amarillo_oro"
-            android:visibility="gone" />
-
-        <!-- Vista previa del video a un lado del QR -->
-        <LinearLayout
-            android:id="@+id/resultRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:baselineAligned="false"
-            android:gravity="center"
-            android:orientation="horizontal"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="12dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_card"
-                android:gravity="center_horizontal"
-                android:orientation="vertical"
-                android:padding="8dp">
-
-                <ImageView
-                    android:id="@+id/preview"
-                    android:layout_width="match_parent"
-                    android:layout_height="280dp"
-                    android:adjustViewBounds="true"
-                    android:contentDescription="@string/preview_description"
-                    android:scaleType="fitCenter" />
-
-                <TextView
-                    android:id="@+id/previewLabel"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:textColor="@color/amarillo_oro"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center_horizontal"
-                android:orientation="vertical">
-
-                <ImageView
-                    android:id="@+id/qr"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:adjustViewBounds="true"
-                    android:background="@drawable/bg_qr"
-                    android:contentDescription="@string/qr_description"
-                    android:padding="10dp"
-                    android:scaleType="fitCenter" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/scan_me"
-                    android:textColor="@color/dorado"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </LinearLayout>
-
         <TextView
-            android:id="@+id/url"
+            android:id="@+id/counter"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="@color/texto_suave"
-            android:textIsSelectable="true"
-            android:textSize="14sp" />
-
-        <com.google.android.material.materialswitch.MaterialSwitch
-            android:id="@+id/autoSwitch"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:checked="true"
-            android:text="@string/auto_process"
-            android:textColor="@color/blanco" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/music_label"
-            android:textColor="@color/dorado"
+            android:background="@drawable/bg_pill"
+            android:paddingStart="16dp"
+            android:paddingTop="8dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="8dp"
+            android:textColor="@color/rojo"
+            android:textSize="18sp"
             android:textStyle="bold" />
-
-        <Spinner
-            android:id="@+id/musicSpinner"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_card"
-            android:minHeight="48dp"
-            android:popupBackground="@color/azul" />
-
-        <TextView
-            android:id="@+id/musicWarning"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/music_missing"
-            android:textColor="@color/amarillo_oro"
-            android:visibility="gone" />
-
-        <Button
-            android:id="@+id/pickButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:backgroundTint="@color/amarillo_oro"
-            android:text="@string/pick_video"
-            android:textColor="@color/azul_oscuro"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/networkInfo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:textColor="@color/texto_suave"
-            android:textSize="13sp" />
-
-        <TextView
-            android:id="@+id/folderInfo"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textColor="@color/texto_suave"
-            android:textSize="12sp" />
     </LinearLayout>
-</ScrollView>
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@android:color/transparent"
+        app:tabIndicatorColor="@color/blanco"
+        app:tabIndicatorFullWidth="false"
+        app:tabIndicatorHeight="4dp"
+        app:tabSelectedTextColor="@color/blanco"
+        app:tabTextColor="@color/blanco_suave" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- Pestaña "En vivo" -->
+        <ScrollView
+            android:id="@+id/livePanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:fillViewport="true">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <TextView
+                    android:id="@+id/status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:textColor="@color/blanco"
+                    android:textSize="22sp"
+                    android:textStyle="bold" />
+
+                <ProgressBar
+                    android:id="@+id/progress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:max="100"
+                    android:progressBackgroundTint="@color/blanco_suave"
+                    android:progressTint="@color/blanco"
+                    android:visibility="gone" />
+
+                <!-- Vista previa del video a un lado del QR -->
+                <LinearLayout
+                    android:id="@+id/resultRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:baselineAligned="false"
+                    android:gravity="center"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="12dp"
+                        android:layout_weight="1"
+                        android:background="@drawable/bg_card"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical"
+                        android:padding="8dp">
+
+                        <ImageView
+                            android:id="@+id/preview"
+                            android:layout_width="match_parent"
+                            android:layout_height="300dp"
+                            android:contentDescription="@string/preview_description"
+                            android:scaleType="fitCenter" />
+
+                        <TextView
+                            android:id="@+id/previewLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:textColor="@color/blanco"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <ImageView
+                            android:id="@+id/qr"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:adjustViewBounds="true"
+                            android:background="@drawable/bg_qr"
+                            android:contentDescription="@string/qr_description"
+                            android:padding="12dp"
+                            android:scaleType="fitCenter" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:background="@drawable/bg_pill"
+                            android:paddingStart="14dp"
+                            android:paddingTop="6dp"
+                            android:paddingEnd="14dp"
+                            android:paddingBottom="6dp"
+                            android:text="@string/scan_me"
+                            android:textColor="@color/rojo"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/url"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/blanco_suave"
+                    android:textIsSelectable="true"
+                    android:textSize="14sp" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/autoSwitch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="24dp"
+                    android:checked="true"
+                    android:text="@string/auto_process"
+                    android:textColor="@color/blanco"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/speed_label"
+                    android:textColor="@color/blanco"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/speedSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card"
+                    android:minHeight="48dp"
+                    android:popupBackground="@color/blanco" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/music_label"
+                    android:textColor="@color/blanco"
+                    android:textStyle="bold" />
+
+                <Spinner
+                    android:id="@+id/musicSpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card"
+                    android:minHeight="48dp"
+                    android:popupBackground="@color/blanco" />
+
+                <TextView
+                    android:id="@+id/musicWarning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/music_missing"
+                    android:textColor="@color/blanco"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/pickButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:backgroundTint="@color/blanco"
+                    android:text="@string/pick_video"
+                    android:textColor="@color/rojo"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/networkInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:textColor="@color/blanco_suave"
+                    android:textSize="13sp" />
+
+                <TextView
+                    android:id="@+id/folderInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="@color/blanco_suave"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Pestaña "Procesados" -->
+        <LinearLayout
+            android:id="@+id/historyPanel"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/historyCount"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:textColor="@color/blanco"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/historyEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:padding="32dp"
+                android:text="@string/history_empty"
+                android:textColor="@color/blanco"
+                android:textSize="16sp"
+                android:visibility="gone" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/historyList"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp" />
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>

@@ -3,7 +3,7 @@
 App para un celular/tablet "kiosko" que:
 
 1. **Recibe videos por Quick Share** (los detecta solo en cuanto llegan).
-2. **Los edita**: marco azul/dorado con **#etu2026**, logo (`marco.png` de `Download/INSUMOS`) mediano arriba a la izquierda, **cámara lenta** (x0.5) y **música** en lugar del audio original.
+2. **Los edita** en formato vertical para Reels/TikTok: marco con degradado y sticker **#etu2026**, logo (`marco.png` de `Download/INSUMOS`) mediano arriba a la izquierda, **speed ramp / cámara lenta progresiva** y **música** en lugar del audio original.
 3. **Muestra un QR**: el invitado lo escanea con su celular, ve el video, lo descarga y lo sube a Instagram, TikTok, WhatsApp, etc.
 
 Todo pasa dentro del celular (edición con [Media3 Transformer](https://developer.android.com/media/media3/transformer), servidor web local con NanoHTTPD y QR con ZXing). No hace falta pagar servidores ni tener internet: basta con una red Wi-Fi local.
@@ -41,34 +41,42 @@ En el celular kiosko, en **Almacenamiento interno > Download > INSUMOS** coloca:
 
 La app pide permiso de **Videos**, **Música y audio** y **Fotos e imágenes**: acepta los tres (elige "Permitir todo"); sin ellos no puede leer la carpeta INSUMOS y el video queda sin música.
 
-### b) El marco (#etu2026)
-El marco ya no es una imagen: la app lo dibuja en **azul, dorado y amarillo oro**, con la franja inferior y el hashtag **#etu2026**. Para cambiar el texto o los colores edita `HASHTAG`, `AZUL`, `DORADO` y `AMARILLO_ORO` en `Config.kt`.
+### b) Estilo para Instagram y TikTok
+- **Formato vertical 9:16 a 1080×1920** (Reels/TikTok). Si el video viene horizontal se recorta al centro.
+- **Marco** con degradado de la paleta (#FCAB14 → #F68425 → #FF7034 → #FB3A4B → #F178AF), esquinas redondeadas y un **sticker #etu2026** ligeramente girado.
+- El logo y el sticker respetan las *zonas seguras* de TikTok/Reels: no quedan tapados por las pestañas de arriba, la descripción de abajo ni los botones de la derecha.
+- Un ligero retoque de contraste y saturación (`CONTRAST`, `SATURATION` en `Config.kt`).
+- Paleta usada en la app y en la página de descarga: `#F68425 #FB3A4B #FF7034 #F54945 #FCAB14 #F178AF #E47493`.
+
+### Efecto de velocidad (se elige en pantalla)
+| Opción | Qué hace |
+|---|---|
+| ⚡ **Speed ramp** (por defecto) | Rápido (1.6x) → frena suave a cámara lenta (0.3x) en el centro → vuelve a acelerar. El clásico de TikTok/CapCut. |
+| 🌊 **Cámara lenta progresiva** | Empieza normal y va frenando hasta 0.25x. |
+| ✨ **Transición a cámara lenta** | Normal y, a la mitad, pasa suavemente a cámara lenta hasta el final. |
+| 🐢 **Cámara lenta constante** | Todo a 0.5x. |
+
+Las curvas están en `SpeedEffect.kt` (puntos `posición → velocidad`) y se pueden ajustar.
+> 💡 Para que la cámara lenta se vea fluida, graba los videos a **60 fps** (o en modo cámara lenta del celular). A 30 fps, una velocidad de 0.3x se ve "a saltos".
 
 ### Pantalla del kiosko
 - Arriba: el hashtag y el **contador de videos de hoy** (se reinicia solo cada día).
-- Al terminar cada video: **vista previa** (fotograma del video, con su número "Video #N · hora") **al lado del QR**, para que cada invitado identifique el suyo.
-- La página que abre el QR usa los mismos colores y muestra la miniatura como portada.
-
-> ⚠️ **Importante sobre la música "viral" de YouTube (Elton John, Taylor Swift…)**
-> - Descargar audio de YouTube **va contra sus términos de uso**, y esas canciones tienen derechos de autor. Si tu kiosko es un negocio (eventos, bodas, fiestas), usarlas sin licencia puede traerte problemas.
-> - Además, **Instagram, TikTok y Facebook detectan la música con derechos** y muchas veces silencian o bloquean el video subido con la canción "pegada".
-> - Opciones recomendadas:
->   1. Usar música libre de derechos o con licencia comercial (YouTube Audio Library, Pixabay Music, Epidemic Sound, Artlist…).
->   2. Comprar las canciones (iTunes, Amazon Music) y conseguir la licencia correspondiente si es un uso comercial.
->   3. Entregar el video **sin música** o con una base libre, y que el invitado añada la canción viral desde la propia app de TikTok/Instagram (esas plataformas sí tienen licencia para su catálogo, y así el video además "posiciona" con el audio en tendencia).
+- Pestaña **🎬 En vivo**: al terminar cada video aparece su **vista previa** ("Video #N · fecha y hora") **al lado del QR**.
+- Pestaña **📁 Procesados**: todos los videos guardados en **Almacenamiento interno > Download > PROCESADOS**. Al tocar uno se **vuelve a generar su QR** (con la IP actual del kiosko) y se muestra en la pestaña En vivo.
+- Los videos de PROCESADOS no se borran solos: elimínalos desde la galería o el gestor de archivos cuando ya no los necesites.
 
 ### c) Ajustes (opcional) — `app/src/main/java/com/kiosko260/videoqr/Config.kt`
 
 | Ajuste | Por defecto | Significado |
 |---|---|---|
-| `SLOW_MOTION_SPEED` | `0.5f` | 0.5 = la mitad de rápido; 0.25 = 4 veces más lento. |
-| `HASHTAG` | `#etu2026` | Texto de la franja inferior del marco. |
+| `DEFAULT_SPEED_EFFECT` | `SPEED_RAMP` | Efecto de velocidad al abrir la app. |
+| `OUTPUT_WIDTH` × `OUTPUT_HEIGHT` | `1080 × 1920` | Formato vertical 9:16. |
+| `VIDEO_BITRATE` | `10_000_000` | Calidad del video (10 Mbps). |
+| `PROCESADOS_FOLDER` | `PROCESADOS` | Carpeta dentro de Download donde se guardan los videos terminados. |
+| `HASHTAG` | `#etu2026` | Texto del sticker del marco. |
 | `INSUMOS_FOLDER` | `Download/INSUMOS` | Carpeta con el logo (`marco.png`) y las canciones. |
 | `LOGO_WIDTH_FRACTION` | `0.30f` | Tamaño del logo (30 % del ancho). |
-| `LOGO_MARGIN_FRACTION` | `0.06f` | Separación del logo respecto a los bordes. |
 | `QUICK_SHARE_FOLDER_LIKE` | `%Quick Share%` | Carpeta que se vigila. Samsung usa `Download/Quick Share/`. **En Pixel/Motorola/Xiaomi, Quick Share guarda en `Download/`: cámbialo a `Download/%`.** |
-| `MAX_SHORT_SIDE_PX` | `1080` | Resolución máxima (Full HD). |
-| `KEEP_OUTPUT_HOURS` | `48` | Los videos editados se borran pasado este tiempo. |
 
 ### d) Carpeta alternativa
 Si no se encuentra nada en INSUMOS, la app también busca en
@@ -91,10 +99,10 @@ Cámara / celular ──Quick Share──▶ Kiosko (Download/Quick Share)
                                     │  la app lo detecta (MediaStore)
                                     ▼
                          Media3 Transformer
-              cámara lenta + marco + logo + canción
+      speed ramp + 9:16 + marco + logo + canción
                                     │
                                     ▼
-          files/editados/<id>.mp4  ──▶  servidor local :8080
+      Download/PROCESADOS/<id>.mp4  ──▶  servidor local :8080
                                     │
                                     ▼
                 QR con http://<ip-del-kiosko>:8080/v/<id>
@@ -129,10 +137,13 @@ Si algún equipo no detecta automáticamente los videos, hay dos alternativas:
 |---|---|
 | `Config.kt` | Todos los ajustes. |
 | `QuickShareWatcher.kt` | Vigila MediaStore y avisa cuando llega un video nuevo a la carpeta de Quick Share. |
-| `VideoProcessor.kt` | Edición con Media3: `SpeedChangeEffect` (cámara lenta), `Presentation` (tamaño), `OverlayEffect` (marco + logo), la canción recortada a la duración final y la miniatura. |
+| `VideoProcessor.kt` | Edición con Media3: `SpeedChangeEffect` con curva variable, `Presentation` (9:16), `Contrast`/`HslAdjustment`, `OverlayEffect` (marco + sticker + logo), la canción recortada a la duración final y la miniatura. |
+| `SpeedEffect.kt` | Curvas de velocidad (speed ramp, progresiva…) convertidas a `SpeedProvider` de Media3. |
+| `VideoLibrary.kt` | Guarda y lista los videos de `Download/PROCESADOS`. |
+| `HistoryAdapter.kt` | Cuadrícula de la pestaña Procesados. |
 | `DailyCounter.kt` | Contador de videos por día. |
 | `Customization.kt` | Carga el logo y las canciones de `Download/INSUMOS` (o carpetas de respaldo). |
 | `VideoServer.kt` | Servidor web local (página de descarga y archivo MP4 con soporte de *Range* para iPhone). |
 | `QrCode.kt` / `NetworkUtils.kt` | Genera el QR y averigua la IP local del kiosko. |
 | `KioskoApp.kt` | Cola de edición (un video a la vez) y arranque del servidor. |
-| `MainActivity.kt` | Pantalla del kiosko: estado, progreso, QR, selector de canción. |
+| `MainActivity.kt` | Pantalla del kiosko: pestañas, estado, progreso, QR, selector de efecto y canción. |

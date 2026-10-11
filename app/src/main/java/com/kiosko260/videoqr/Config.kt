@@ -4,11 +4,25 @@ import android.graphics.Color
 
 /** Ajustes del kiosko. Cambia aquí los valores y vuelve a compilar. */
 object Config {
-    /** Velocidad del video: 0.5 = la mitad de rápido (cámara lenta x2), 0.25 = x4. */
-    const val SLOW_MOTION_SPEED = 0.5f
-
-    /** Texto de la franja inferior del marco. */
+    /** Texto del sticker del marco. */
     const val HASHTAG = "#etu2026"
+
+    /** Efecto de velocidad que se usa al abrir la app (se puede cambiar en pantalla). */
+    val DEFAULT_SPEED_EFFECT = SpeedEffect.SPEED_RAMP
+
+    /**
+     * Formato vertical 9:16 de Instagram Reels y TikTok. Los videos horizontales se recortan
+     * al centro para llenar la pantalla.
+     */
+    const val OUTPUT_WIDTH = 1080
+    const val OUTPUT_HEIGHT = 1920
+
+    /** Calidad del video final (bits por segundo). 10 Mbps se ve nítido en Reels/TikTok. */
+    const val VIDEO_BITRATE = 10_000_000
+
+    /** Retoque "aesthetic": un poco más de contraste y color. 0 = sin cambios. */
+    const val CONTRAST = 0.08f
+    const val SATURATION = 12f
 
     /**
      * Carpeta de insumos dentro de "Almacenamiento interno":
@@ -18,20 +32,22 @@ object Config {
     const val INSUMOS_FOLDER = "Download/INSUMOS"
     const val LOGO_FILE = "marco.png"
 
-    /** Ancho del logo (esquina superior izquierda) como fracción del ancho del video. */
+    /** Carpeta donde se guardan los videos terminados (Almacenamiento interno > Download > PROCESADOS). */
+    const val PROCESADOS_FOLDER = "PROCESADOS"
+
+    /** Ancho del logo como fracción del ancho del video. */
     const val LOGO_WIDTH_FRACTION = 0.30f
 
-    /** Separación del logo respecto a los bordes, como fracción del ancho del video. */
-    const val LOGO_MARGIN_FRACTION = 0.06f
-
-    /** Colores de la marca: azul, dorado y amarillo oro. */
-    val AZUL = Color.parseColor("#0B2A6F")
-    val AZUL_CLARO = Color.parseColor("#1E4FBF")
-    val DORADO = Color.parseColor("#C9A227")
-    val AMARILLO_ORO = Color.parseColor("#FFD700")
-
-    /** El lado corto del video final no superará estos píxeles (1080 = Full HD). */
-    const val MAX_SHORT_SIDE_PX = 1080
+    /**
+     * Paleta energética/juvenil. Se usa en el marco, la pantalla del kiosko y la página de descarga.
+     */
+    val NARANJA = Color.parseColor("#F68425")
+    val ROJO = Color.parseColor("#FB3A4B")
+    val NARANJA_FUEGO = Color.parseColor("#FF7034")
+    val CORAL = Color.parseColor("#F54945")
+    val AMARILLO = Color.parseColor("#FCAB14")
+    val ROSA = Color.parseColor("#F178AF")
+    val ROSA_VIEJO = Color.parseColor("#E47493")
 
     /**
      * Carpeta que se vigila (patrón SQL LIKE sobre RELATIVE_PATH de MediaStore).
@@ -42,9 +58,6 @@ object Config {
 
     /** Puerto del servidor local de descargas. */
     const val SERVER_PORT = 8080
-
-    /** Los videos editados se borran pasado este tiempo para no llenar la memoria. */
-    const val KEEP_OUTPUT_HOURS = 48L
 
     /** Respaldo dentro del APK (assets/) si no se encuentra nada en la carpeta de insumos. */
     const val FALLBACK_LOGO_ASSET = "logo.png"

@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="azul">#0B2A6F</color>
-    <color name="azul_oscuro">#061A47</color>
-    <color name="azul_claro">#1E4FBF</color>
-    <color name="dorado">#C9A227</color>
-    <color name="amarillo_oro">#FFD700</color>
+    <color name="naranja">#F68425</color>
+    <color name="rojo">#FB3A4B</color>
+    <color name="naranja_fuego">#FF7034</color>
+    <color name="coral">#F54945</color>
+    <color name="amarillo">#FCAB14</color>
+    <color name="rosa">#F178AF</color>
+    <color name="rosa_viejo">#E47493</color>
     <color name="blanco">#FFFFFF</color>
-    <color name="texto_suave">#C8D3F0</color>
+    <color name="blanco_suave">#FFF3EA</color>
+    <color name="fondo_tarjeta">#33FFFFFF</color>
 </resources>

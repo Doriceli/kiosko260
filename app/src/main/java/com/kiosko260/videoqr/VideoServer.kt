@@ -13,7 +13,7 @@ import java.io.FileInputStream
  *  - `/t/<id>.jpg`  la miniatura (portada del video).
  * El celular del cliente debe estar en la misma red Wi-Fi (o conectado al hotspot del kiosko).
  */
-class VideoServer(private val videosDir: File, port: Int) : NanoHTTPD(port) {
+class VideoServer(private val library: VideoLibrary, port: Int) : NanoHTTPD(port) {
 
     override fun serve(session: IHTTPSession): Response {
         val path = session.uri
@@ -26,8 +26,8 @@ class VideoServer(private val videosDir: File, port: Int) : NanoHTTPD(port) {
     }
 
     private fun resolve(id: String): File? {
-        if (!ID_PATTERN.matches(id)) return null
-        return File(videosDir, "$id.mp4").takeIf { it.isFile }
+        if (!VideoLibrary.ID_PATTERN.matches(id)) return null
+        return library.videoFile(id).takeIf { it.isFile }
     }
 
     private fun page(id: String): Response {
@@ -38,21 +38,24 @@ class VideoServer(private val videosDir: File, port: Int) : NanoHTTPD(port) {
             <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
             <title>Tu video</title>
             <style>
-              body{margin:0;font-family:system-ui,sans-serif;background:linear-gradient(#061A47,#0B2A6F);
-                   min-height:100vh;color:#fff;text-align:center;padding:16px;box-sizing:border-box}
-              h1{color:#FFD700;margin:8px 0 0;font-size:34px}
-              h2{color:#C9A227;font-weight:600;margin:4px 0 16px}
-              video{width:100%;max-width:480px;border-radius:12px;background:#000;border:3px solid #C9A227}
-              a.btn{display:block;max-width:480px;margin:16px auto;padding:16px;border-radius:12px;
-                    background:linear-gradient(90deg,#C9A227,#FFD700,#C9A227);color:#061A47;
-                    font-size:20px;font-weight:bold;text-decoration:none}
-              p{color:#C8D3F0;font-size:15px;max-width:480px;margin:8px auto}
+              body{margin:0;font-family:system-ui,sans-serif;color:#fff;text-align:center;padding:16px;
+                   box-sizing:border-box;min-height:100vh;
+                   background:linear-gradient(160deg,#FCAB14 0%,#F68425 25%,#FB3A4B 55%,#F178AF 85%,#E47493 100%)}
+              h1{margin:8px 0 0;font-size:40px;font-weight:900;letter-spacing:1px;
+                 text-shadow:0 3px 0 #F54945,0 6px 18px rgba(0,0,0,.25);transform:rotate(-3deg)}
+              h2{font-weight:700;margin:6px 0 16px}
+              video{width:100%;max-width:420px;aspect-ratio:9/16;object-fit:cover;border-radius:22px;
+                    background:#000;border:4px solid #fff;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+              a.btn{display:block;max-width:420px;margin:18px auto;padding:18px;border-radius:999px;
+                    background:#fff;color:#FB3A4B;font-size:21px;font-weight:900;text-decoration:none;
+                    box-shadow:0 6px 0 #F54945}
+              p{font-size:15px;max-width:420px;margin:8px auto;text-shadow:0 1px 2px rgba(0,0,0,.25)}
             </style></head><body>
             <h1>${Config.HASHTAG}</h1>
             <h2>¡Tu video está listo! 🎬</h2>
             <video src="/f/$id.mp4" poster="/t/$id.jpg" controls playsinline loop></video>
             <a class="btn" href="/f/$id.mp4?dl=1" download="video-$id.mp4">⬇️ Descargar video</a>
-            <p>Después ábrelo desde tu galería (o en iPhone desde Archivos &rarr; Descargas &rarr; Compartir &rarr; Guardar video) y súbelo a Instagram, TikTok, WhatsApp…</p>
+            <p>Súbelo como Reel o TikTok 🔥 Ábrelo desde tu galería (o en iPhone desde Archivos &rarr; Descargas &rarr; Compartir &rarr; Guardar video) y etiqueta ${Config.HASHTAG}</p>
             </body></html>
         """.trimIndent()
         return newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", html)
@@ -95,8 +98,8 @@ class VideoServer(private val videosDir: File, port: Int) : NanoHTTPD(port) {
     }
 
     private fun thumbnail(id: String): Response {
-        if (!ID_PATTERN.matches(id)) return notFound()
-        val file = File(videosDir, "$id.jpg").takeIf { it.isFile } ?: return notFound()
+        if (!VideoLibrary.ID_PATTERN.matches(id)) return notFound()
+        val file = library.thumbnailFile(id).takeIf { it.isFile } ?: return notFound()
         return newFixedLengthResponse(Response.Status.OK, "image/jpeg", FileInputStream(file), file.length())
     }
 
@@ -104,7 +107,6 @@ class VideoServer(private val videosDir: File, port: Int) : NanoHTTPD(port) {
         newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Video no encontrado o ya expiró.")
 
     private companion object {
-        val ID_PATTERN = Regex("^[A-Za-z0-9]{6,32}$")
         const val MIME_MP4 = "video/mp4"
     }
 }

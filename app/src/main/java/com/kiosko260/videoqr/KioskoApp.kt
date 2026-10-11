@@ -16,17 +16,19 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.concurrent.TimeUnit
+
+/** El video cuyo QR se muestra en pantalla. */
+data class SharedVideo(val id: String, val url: String?, val thumbnail: String?, val number: Int?, val label: String)
 
 /** Estado que muestra la pantalla. */
 data class KioskState(
     val status: String = "Esperando videos por Quick Share…",
     val progress: Int? = null,
     val pending: Int = 0,
-    val lastUrl: String? = null,
-    val lastThumbnail: String? = null,
-    val lastNumber: Int = 0,
+    val current: SharedVideo? = null,
     val todayCount: Int = 0,
+    /** Cambia cada vez que se termina un video, para refrescar la pestaña de procesados. */
+    val libraryVersion: Int = 0,
 )
 
 /**
@@ -41,23 +43,25 @@ class KioskoApp : Application() {
     private val _state = MutableStateFlow(KioskState())
     val state: StateFlow<KioskState> = _state.asStateFlow()
 
-    lateinit var outputDir: File
+    lateinit var library: VideoLibrary
         private set
     lateinit var customization: Customization
         private set
     private lateinit var counter: DailyCounter
+    private lateinit var processor: VideoProcessor
     private var server: VideoServer? = null
 
     /** null = canción aleatoria. */
     @Volatile var selectedTrack: MusicTrack? = null
+    @Volatile var speedEffect: SpeedEffect = Config.DEFAULT_SPEED_EFFECT
 
     override fun onCreate() {
         super.onCreate()
-        outputDir = File(getExternalFilesDir(null), "editados").apply { mkdirs() }
+        library = VideoLibrary(this)
         customization = Customization(this)
         counter = DailyCounter(this)
+        processor = VideoProcessor(this)
         refreshCounter()
-        deleteOldVideos()
         startServer()
         scope.launch { processQueue() }
     }
@@ -74,7 +78,7 @@ class KioskoApp : Application() {
 
     fun startServer() {
         if (server?.isAlive == true) return
-        server = VideoServer(outputDir, Config.SERVER_PORT).also {
+        server = VideoServer(library, Config.SERVER_PORT).also {
             runCatching { it.start() }.onFailure { e -> Log.e(TAG, "No se pudo iniciar el servidor", e) }
         }
     }
@@ -82,32 +86,61 @@ class KioskoApp : Application() {
     fun shareUrl(id: String): String? =
         NetworkUtils.localIpAddress()?.let { "http://$it:${Config.SERVER_PORT}/v/$id" }
 
+    /** Vuelve a mostrar el QR de un video de la pestaña "Procesados". */
+    fun showExisting(video: ProcessedVideo) {
+        scope.launch {
+            val thumbnail = withContext(Dispatchers.IO) { thumbnailFor(video.id) }
+            val url = shareUrl(video.id)
+            _state.update {
+                it.copy(
+                    status = if (url != null) "Escanea el QR para descargar este video"
+                    else "El kiosko no está conectado a Wi-Fi/hotspot",
+                    current = SharedVideo(video.id, url, thumbnail?.absolutePath, video.number, labelFor(video)),
+                )
+            }
+        }
+    }
+
+    /** Miniatura del video; si no existe (p. ej. tras reinstalar la app) se vuelve a generar. */
+    fun thumbnailFor(id: String): File? {
+        val thumbnail = library.thumbnailFile(id)
+        if (thumbnail.isFile) return thumbnail
+        val video = library.videoFile(id).takeIf { it.isFile } ?: return null
+        return processor.createThumbnail(video, thumbnail)
+    }
+
+    fun labelFor(video: ProcessedVideo): String {
+        val time = video.createdAt?.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")) ?: ""
+        return listOfNotNull(video.number?.let { "Video #$it" }, time.ifEmpty { null }).joinToString(" · ")
+    }
+
     private suspend fun processQueue() {
-        val processor = VideoProcessor(this)
         for (uri in queue) {
-            val id = newId()
-            val track = selectedTrack ?: customization.musicTracks().randomOrNull()
+            val id = library.newId()
+            val track = selectedTrack ?: withContext(Dispatchers.IO) { customization.musicTracks() }.randomOrNull()
+            val effect = speedEffect
             _state.update {
                 it.copy(status = "Editando video" + (track?.let { t -> " con «${t.title}»" } ?: "") + "…", progress = 0)
             }
             try {
-                val video = processor.process(uri, track, File(outputDir, "$id.mp4")) { p ->
+                val exported = processor.process(uri, track, effect, File(cacheDir, "$id.mp4")) { p ->
                     _state.update { it.copy(progress = p) }
                 }
-                val thumbnail = withContext(Dispatchers.IO) {
-                    processor.createThumbnail(video, File(outputDir, "$id.jpg"))
-                }
                 val number = counter.increment()
+                val saved = withContext(Dispatchers.IO) {
+                    library.save(id, exported, number)
+                    processor.createThumbnail(library.videoFile(id), library.thumbnailFile(id))
+                    library.find(id)
+                } ?: error("No se pudo guardar el video en Download/${Config.PROCESADOS_FOLDER}")
                 val url = shareUrl(id)
                 _state.update {
                     it.copy(
                         status = if (url != null) "¡Listo! Escanea el QR para descargar tu video"
                         else "Video listo, pero el kiosko no está conectado a Wi-Fi/hotspot",
                         progress = null,
-                        lastUrl = url ?: it.lastUrl,
-                        lastThumbnail = thumbnail?.absolutePath,
-                        lastNumber = number,
+                        current = SharedVideo(id, url, library.thumbnailFile(id).absolutePath, number, labelFor(saved)),
                         todayCount = number,
+                        libraryVersion = it.libraryVersion + 1,
                     )
                 }
             } catch (e: Exception) {
@@ -117,16 +150,6 @@ class KioskoApp : Application() {
                 _state.update { it.copy(pending = (it.pending - 1).coerceAtLeast(0)) }
             }
         }
-    }
-
-    private fun newId(): String {
-        val chars = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-        return (1..10).map { chars.random() }.joinToString("")
-    }
-
-    private fun deleteOldVideos() {
-        val limit = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(Config.KEEP_OUTPUT_HOURS)
-        outputDir.listFiles()?.filter { it.lastModified() < limit }?.forEach { it.delete() }
     }
 
     private companion object {

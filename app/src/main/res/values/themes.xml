@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Kiosko" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">@color/amarillo_oro</item>
-        <item name="colorOnPrimary">@color/azul_oscuro</item>
-        <item name="colorSecondary">@color/dorado</item>
-        <item name="android:windowBackground">@color/azul_oscuro</item>
-        <item name="android:statusBarColor">@color/azul_oscuro</item>
-        <item name="android:navigationBarColor">@color/azul_oscuro</item>
+    <style name="Theme.Kiosko" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/rojo</item>
+        <item name="colorOnPrimary">@color/blanco</item>
+        <item name="colorSecondary">@color/amarillo</item>
+        <item name="android:windowBackground">@drawable/bg_screen</item>
+        <item name="android:statusBarColor">@color/naranja</item>
+        <item name="android:navigationBarColor">@color/rosa</item>
     </style>
 </resources>

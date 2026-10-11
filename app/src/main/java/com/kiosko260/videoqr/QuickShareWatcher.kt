@@ -58,10 +58,14 @@ class QuickShareWatcher(
         if (!running) return
         val projection = arrayOf(MediaStore.Video.Media._ID)
         val selection = "${MediaStore.Video.Media.RELATIVE_PATH} LIKE ? AND " +
+            // Nunca reprocesar los videos ya terminados.
+            "${MediaStore.Video.Media.RELATIVE_PATH} NOT LIKE ? AND " +
             "${MediaStore.Video.Media.DATE_ADDED} >= ? AND " +
             "${MediaStore.Video.Media.IS_PENDING} = 0 AND " +
             "${MediaStore.Video.Media.SIZE} > 0"
-        val args = arrayOf(Config.QUICK_SHARE_FOLDER_LIKE, startedAtSeconds.toString())
+        val args = arrayOf(
+            Config.QUICK_SHARE_FOLDER_LIKE, "%${Config.PROCESADOS_FOLDER}%", startedAtSeconds.toString(),
+        )
 
         runCatching {
             context.contentResolver.query(

@@ -8,6 +8,10 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+    <!-- Solo Android 10: escribir en Download/PROCESADOS. En Android 11+ no hace falta. -->
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="29" />
 
     <!-- Servidor local para la descarga por QR. -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -17,6 +21,7 @@
     <application
         android:name=".KioskoApp"
         android:allowBackup="false"
+        android:requestLegacyExternalStorage="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.Kiosko">

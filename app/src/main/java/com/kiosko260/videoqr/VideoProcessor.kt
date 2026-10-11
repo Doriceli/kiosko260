@@ -3,8 +3,10 @@ package com.kiosko260.videoqr
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.LinearGradient
 import android.graphics.Paint
+import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
@@ -19,11 +21,14 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.BitmapOverlay
+import androidx.media3.effect.Contrast
+import androidx.media3.effect.HslAdjustment
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.Presentation
 import androidx.media3.effect.SpeedChangeEffect
 import androidx.media3.effect.TextureOverlay
 import androidx.media3.transformer.Composition
+import androidx.media3.transformer.DefaultEncoderFactory
 import androidx.media3.transformer.EditedMediaItem
 import androidx.media3.transformer.EditedMediaItemSequence
 import androidx.media3.transformer.Effects
@@ -31,7 +36,7 @@ import androidx.media3.transformer.ExportException
 import androidx.media3.transformer.ExportResult
 import androidx.media3.transformer.ProgressHolder
 import androidx.media3.transformer.Transformer
-import com.google.common.collect.ImmutableList
+import androidx.media3.transformer.VideoEncoderSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -43,44 +48,50 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * Edita un video con Media3 Transformer:
- *  1. cámara lenta ([Config.SLOW_MOTION_SPEED]),
- *  2. marco azul/dorado con [Config.HASHTAG] + logo arriba a la izquierda,
- *  3. reemplaza el audio por una canción recortada a la duración exacta del video final.
+ * Edita un video con Media3 Transformer, pensado para Instagram Reels y TikTok:
+ *  1. curva de velocidad ([SpeedEffect]: speed ramp, cámara lenta progresiva…),
+ *  2. formato vertical 9:16 a 1080×1920 (recorta al centro si el video es horizontal),
+ *  3. retoque de contraste/color,
+ *  4. marco con degradado + sticker [Config.HASHTAG] + logo arriba a la izquierda,
+ *  5. reemplaza el audio por una canción recortada a la duración exacta del video final.
  */
 @OptIn(UnstableApi::class)
 class VideoProcessor(private val context: Context) {
 
     private val customization = Customization(context)
 
-    private data class VideoInfo(val width: Int, val height: Int, val durationMs: Long)
-
     suspend fun process(
         input: Uri,
         music: MusicTrack?,
+        speedEffect: SpeedEffect,
         output: File,
         onProgress: (Int) -> Unit,
     ): File {
-        val info = withContext(Dispatchers.IO) { probe(input) }
-        val overlay = withContext(Dispatchers.Default) { buildOverlay(info.width, info.height) }
+        val inputDurationUs = withContext(Dispatchers.IO) { durationUs(input) }
+        val overlay = withContext(Dispatchers.Default) { buildOverlay(Config.OUTPUT_WIDTH, Config.OUTPUT_HEIGHT) }
+        val speed = speedEffect.toSpeedProvider(inputDurationUs)
 
-        val videoEffects = mutableListOf<Effect>(
-            SpeedChangeEffect(Config.SLOW_MOTION_SPEED),
-            Presentation.createForWidthAndHeight(info.width, info.height, Presentation.LAYOUT_SCALE_TO_FIT),
-            OverlayEffect(ImmutableList.of<TextureOverlay>(BitmapOverlay.createStaticBitmapOverlay(overlay))),
+        val videoEffects = listOf<Effect>(
+            SpeedChangeEffect(speed),
+            Presentation.createForWidthAndHeight(
+                Config.OUTPUT_WIDTH, Config.OUTPUT_HEIGHT, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP,
+            ),
+            Contrast(Config.CONTRAST),
+            HslAdjustment.Builder().adjustSaturation(Config.SATURATION).build(),
+            OverlayEffect(listOf<TextureOverlay>(BitmapOverlay.createStaticBitmapOverlay(overlay))),
         )
 
         val video = EditedMediaItem.Builder(MediaItem.fromUri(input))
-            // El audio original en cámara lenta suena mal: se sustituye por la canción.
+            // El audio original con cambios de velocidad suena mal: se sustituye por la canción.
             .setRemoveAudio(true)
             .setEffects(Effects(emptyList(), videoEffects))
             .build()
 
-        val sequences = mutableListOf(EditedMediaItemSequence(video))
+        val sequences = mutableListOf(EditedMediaItemSequence.Builder(listOf(video)).build())
         if (music != null) {
-            val finalDurationMs = (info.durationMs / Config.SLOW_MOTION_SPEED).toLong()
+            val finalDurationMs = speed.outputDurationUs(inputDurationUs) / 1000
             val songItems = withContext(Dispatchers.IO) { musicItems(music, finalDurationMs) }
-            if (songItems.isNotEmpty()) sequences += EditedMediaItemSequence(songItems)
+            if (songItems.isNotEmpty()) sequences += EditedMediaItemSequence.Builder(songItems).build()
         }
         val composition = Composition.Builder(sequences).build()
 
@@ -90,8 +101,7 @@ class VideoProcessor(private val context: Context) {
 
     /**
      * Trozos de la canción que suman exactamente [targetMs]. Si la canción es más corta que el
-     * video, se repite desde el principio. (No se usa una secuencia en bucle porque Media3 calcula
-     * su fin con la duración original del video, sin la cámara lenta, y la música se cortaba.)
+     * video, se repite desde el principio.
      */
     private fun musicItems(music: MusicTrack, targetMs: Long): List<EditedMediaItem> {
         val songMs = customization.durationMs(music.uri)
@@ -127,6 +137,14 @@ class VideoProcessor(private val context: Context) {
             val transformer = Transformer.Builder(context)
                 .setVideoMimeType(MimeTypes.VIDEO_H264)
                 .setAudioMimeType(MimeTypes.AUDIO_AAC)
+                .setEncoderFactory(
+                    DefaultEncoderFactory.Builder(context)
+                        .setRequestedVideoEncoderSettings(
+                            VideoEncoderSettings.Builder().setBitrate(Config.VIDEO_BITRATE).build()
+                        )
+                        .setEnableFallback(true)
+                        .build()
+                )
                 .addListener(object : Transformer.Listener {
                     override fun onCompleted(composition: Composition, exportResult: ExportResult) {
                         handler.removeCallbacks(poll)
@@ -172,7 +190,7 @@ class VideoProcessor(private val context: Context) {
             retriever.setDataSource(video.absolutePath)
             val durationUs = (retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
                 ?.toLongOrNull() ?: 0L) * 1000
-            val frame = retriever.getFrameAtTime(durationUs / 3, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+            val frame = retriever.getFrameAtTime(durationUs / 2, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
                 ?: return null
             val scale = min(1f, 540f / frame.width)
             val small = Bitmap.createScaledBitmap(frame, even(frame.width * scale), even(frame.height * scale), true)
@@ -185,19 +203,12 @@ class VideoProcessor(private val context: Context) {
         }
     }
 
-    /** Tamaño final en orientación de pantalla (respetando la rotación del video), con números pares. */
-    private fun probe(input: Uri): VideoInfo {
+    private fun durationUs(input: Uri): Long {
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(context, input)
-            var w = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 1080
-            var h = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 1920
-            val rotation = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
-            if (rotation == 90 || rotation == 270) w = h.also { h = w }
-            val durationMs = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
-
-            val scale = min(1f, Config.MAX_SHORT_SIDE_PX.toFloat() / min(w, h))
-            return VideoInfo(even(w * scale), even(h * scale), durationMs)
+            val ms = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+            return ms * 1000
         } finally {
             retriever.release()
         }
@@ -205,66 +216,70 @@ class VideoProcessor(private val context: Context) {
 
     private fun even(value: Float): Int = (value / 2f).roundToInt() * 2
 
-    /** Marco azul/dorado con el hashtag + logo, en una sola imagen transparente del tamaño del video. */
+    /**
+     * Marco con degradado (amarillo → naranja → rojo → rosa), sticker con el hashtag y logo.
+     * Respeta las "zonas seguras" de TikTok/Reels: nada importante arriba del todo (pestañas),
+     * en el 20 % inferior (descripción) ni pegado al borde derecho (botones).
+     */
     private fun buildOverlay(width: Int, height: Int): Bitmap {
         val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
-        val unit = min(width, height) / 100f // 1 % del lado corto
+        val unit = width / 100f // 1 % del ancho
 
-        // Borde exterior azul.
-        val border = 3.5f * unit
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = border
-            color = Config.AZUL
-            canvas.drawRect(border / 2, border / 2, width - border / 2, height - border / 2, this)
-        }
-        // Filete dorado (degradado dorado → amarillo oro → dorado).
-        val gold = LinearGradient(
-            0f, 0f, width.toFloat(), height.toFloat(),
-            intArrayOf(Config.DORADO, Config.AMARILLO_ORO, Config.DORADO), null, Shader.TileMode.CLAMP,
-        )
-        val goldLine = 0.9f * unit
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = goldLine
-            shader = gold
-            val inset = border + goldLine / 2
-            canvas.drawRect(inset, inset, width - inset, height - inset, this)
-        }
+        val palette = intArrayOf(Config.AMARILLO, Config.NARANJA, Config.NARANJA_FUEGO, Config.ROJO, Config.ROSA)
 
-        // Franja inferior azul con el hashtag en dorado.
-        val bandHeight = 11f * unit
-        val bandTop = height - border - bandHeight
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = LinearGradient(
-                0f, bandTop, 0f, height.toFloat(),
-                Config.AZUL_CLARO, Config.AZUL, Shader.TileMode.CLAMP,
-            )
-            canvas.drawRect(RectF(border, bandTop, width - border, height - border), this)
+        // Borde con degradado diagonal y esquinas interiores redondeadas.
+        val border = 2.2f * unit
+        val radius = 5f * unit
+        val frame = Path().apply {
+            fillType = Path.FillType.EVEN_ODD
+            addRect(0f, 0f, width.toFloat(), height.toFloat(), Path.Direction.CW)
+            addRoundRect(RectF(border, border, width - border, height - border), radius, radius, Path.Direction.CW)
         }
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            shader = gold
-            canvas.drawRect(border, bandTop - goldLine, width - border, bandTop, this)
-        }
-        Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = gold
+        canvas.drawPath(frame, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), palette, null, Shader.TileMode.CLAMP)
+        })
+
+        // Sticker con el hashtag, un poco girado, encima de la zona de la descripción.
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textSize = 6.5f * unit
+            textSize = 8f * unit
             textAlign = Paint.Align.CENTER
-            setShadowLayer(0.6f * unit, 0f, 0.3f * unit, Config.AZUL)
-            val baseline = bandTop + bandHeight / 2 - (descent() + ascent()) / 2
-            canvas.drawText(Config.HASHTAG, width / 2f, baseline, this)
+            setShadowLayer(0.5f * unit, 0f, 0.3f * unit, Config.CORAL)
         }
+        val textWidth = textPaint.measureText(Config.HASHTAG)
+        val pillWidth = textWidth + 10f * unit
+        val pillHeight = 13f * unit
+        val centerX = width / 2f
+        val centerY = height * 0.74f
+        val pill = RectF(centerX - pillWidth / 2, centerY - pillHeight / 2, centerX + pillWidth / 2, centerY + pillHeight / 2)
+        canvas.save()
+        canvas.rotate(-4f, centerX, centerY)
+        canvas.drawRoundRect(pill, pillHeight / 2, pillHeight / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(
+                pill.left, 0f, pill.right, 0f,
+                intArrayOf(Config.AMARILLO, Config.NARANJA, Config.ROJO, Config.ROSA), null, Shader.TileMode.CLAMP,
+            )
+            setShadowLayer(1.5f * unit, 0f, 0.8f * unit, Color.argb(110, 0, 0, 0))
+        })
+        canvas.drawRoundRect(pill, pillHeight / 2, pillHeight / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            strokeWidth = 0.7f * unit
+            color = Color.WHITE
+        })
+        val baseline = centerY - (textPaint.descent() + textPaint.ascent()) / 2
+        canvas.drawText(Config.HASHTAG, centerX, baseline, textPaint)
+        canvas.restore()
 
-        // Logo (marco.png de INSUMOS) arriba a la izquierda.
+        // Logo (marco.png de INSUMOS) arriba a la izquierda, debajo de las pestañas de TikTok/Reels.
         customization.loadLogo()?.let { logo ->
-            val margin = (width * Config.LOGO_MARGIN_FRACTION).roundToInt()
+            val left = (7f * unit).roundToInt()
+            val top = (height * 0.08f).roundToInt()
             val logoWidth = (width * Config.LOGO_WIDTH_FRACTION).roundToInt()
             val logoHeight = (logoWidth.toFloat() * logo.height / logo.width).roundToInt()
             canvas.drawBitmap(
-                logo, null, Rect(margin, margin, margin + logoWidth, margin + logoHeight),
+                logo, null, Rect(left, top, left + logoWidth, top + logoHeight),
                 Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG),
             )
             logo.recycle()

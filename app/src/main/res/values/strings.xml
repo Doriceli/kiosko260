@@ -1,17 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Kiosko Video QR</string>
+    <string name="tab_live">🎬 En vivo</string>
+    <string name="tab_history">📁 Procesados</string>
     <string name="qr_description">Código QR para descargar el video</string>
     <string name="auto_process">Editar automáticamente los videos que lleguen por Quick Share</string>
+    <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>
     <string name="music_missing">No se encontraron canciones. Copia los .mp3 en Almacenamiento interno &gt; Download &gt; INSUMOS y da permiso de \"Música y audio\" a la app.</string>
     <string name="counter_today">Videos hoy: %1$d</string>
-    <string name="preview_label">Video #%1$d · %2$s</string>
     <string name="preview_description">Vista previa del video a compartir</string>
     <string name="scan_me">Escanéame 📲</string>
     <string name="pick_video">Elegir un video manualmente</string>
+    <string name="history_count">%1$d videos en Download/PROCESADOS · toca uno para mostrar su QR</string>
+    <string name="history_empty">Todavía no hay videos procesados.</string>
     <string name="network_ok">Servidor activo en http://%1$s:%2$d — los clientes deben estar en la misma red Wi-Fi.</string>
     <string name="network_missing">⚠️ Sin Wi-Fi ni hotspot: conecta el kiosko a una red o activa el hotspot para que el QR funcione.</string>
-    <string name="custom_folder_info">Logo y canciones: Almacenamiento interno &gt; Download &gt; INSUMOS (marco.png y archivos .mp3).\nAlternativa: %1$s</string>
+    <string name="folders_info">Logo y canciones: Almacenamiento interno &gt; %1$s · Videos terminados: Download &gt; %2$s</string>
 </resources>
