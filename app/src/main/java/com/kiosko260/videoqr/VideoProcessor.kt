@@ -22,6 +22,7 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.effect.BitmapOverlay
 import androidx.media3.effect.Contrast
+import androidx.media3.effect.FrameDropEffect
 import androidx.media3.effect.HslAdjustment
 import androidx.media3.effect.OverlayEffect
 import androidx.media3.effect.Presentation
@@ -50,10 +51,11 @@ import kotlin.math.roundToInt
 /**
  * Edita un video con Media3 Transformer, pensado para Instagram Reels y TikTok:
  *  1. curva de velocidad ([SpeedEffect]: speed ramp, cámara lenta progresiva…),
- *  2. formato vertical 9:16 a 1080×1920 (recorta al centro si el video es horizontal),
- *  3. retoque de contraste/color,
+ *  2. formato vertical 9:16 respetando la resolución original (los horizontales se recortan al centro),
+ *  3. retoque de color opcional (desactivado por defecto),
  *  4. marco con degradado + sticker [Config.HASHTAG] + logo arriba a la izquierda,
  *  5. reemplaza el audio por una canción recortada a la duración exacta del video final.
+ * El bitrate de salida es igual o mayor que el del original para no perder calidad.
  */
 @OptIn(UnstableApi::class)
 class VideoProcessor(private val context: Context) {
@@ -67,19 +69,20 @@ class VideoProcessor(private val context: Context) {
         output: File,
         onProgress: (Int) -> Unit,
     ): File {
-        val inputDurationUs = withContext(Dispatchers.IO) { durationUs(input) }
-        val overlay = withContext(Dispatchers.Default) { buildOverlay(Config.OUTPUT_WIDTH, Config.OUTPUT_HEIGHT) }
-        val speed = speedEffect.toSpeedProvider(inputDurationUs)
+        val info = withContext(Dispatchers.IO) { probe(input) }
+        val overlay = withContext(Dispatchers.Default) { buildOverlay(info.outputWidth, info.outputHeight) }
+        val speed = speedEffect.toSpeedProvider(info.durationUs)
 
-        val videoEffects = listOf<Effect>(
+        val videoEffects = mutableListOf<Effect>(
             SpeedChangeEffect(speed),
+            FrameDropEffect.createDefaultFrameDropEffect(Config.MAX_FRAME_RATE),
             Presentation.createForWidthAndHeight(
-                Config.OUTPUT_WIDTH, Config.OUTPUT_HEIGHT, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP,
+                info.outputWidth, info.outputHeight, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP,
             ),
-            Contrast(Config.CONTRAST),
-            HslAdjustment.Builder().adjustSaturation(Config.SATURATION).build(),
-            OverlayEffect(listOf<TextureOverlay>(BitmapOverlay.createStaticBitmapOverlay(overlay))),
         )
+        if (Config.CONTRAST != 0f) videoEffects += Contrast(Config.CONTRAST)
+        if (Config.SATURATION != 0f) videoEffects += HslAdjustment.Builder().adjustSaturation(Config.SATURATION).build()
+        videoEffects += OverlayEffect(listOf<TextureOverlay>(BitmapOverlay.createStaticBitmapOverlay(overlay)))
 
         val video = EditedMediaItem.Builder(MediaItem.fromUri(input))
             // El audio original con cambios de velocidad suena mal: se sustituye por la canción.
@@ -89,14 +92,18 @@ class VideoProcessor(private val context: Context) {
 
         val sequences = mutableListOf(EditedMediaItemSequence.Builder(listOf(video)).build())
         if (music != null) {
-            val finalDurationMs = speed.outputDurationUs(inputDurationUs) / 1000
+            val finalDurationMs = speed.outputDurationUs(info.durationUs) / 1000
             val songItems = withContext(Dispatchers.IO) { musicItems(music, finalDurationMs) }
             if (songItems.isNotEmpty()) sequences += EditedMediaItemSequence.Builder(songItems).build()
         }
-        val composition = Composition.Builder(sequences).build()
+        val composition = Composition.Builder(sequences)
+            // Los videos HDR (muy comunes en Samsung/iPhone) se convierten a SDR con buen mapeo de
+            // tonos; si no, se verían lavados en WhatsApp, Instagram y en la mayoría de celulares.
+            .setHdrMode(Composition.HDR_MODE_TONE_MAP_HDR_TO_SDR_USING_OPEN_GL)
+            .build()
 
         output.parentFile?.mkdirs()
-        return withContext(Dispatchers.Main) { export(composition, output, onProgress) }
+        return withContext(Dispatchers.Main) { export(composition, info.bitrate, output, onProgress) }
     }
 
     /**
@@ -128,7 +135,7 @@ class VideoProcessor(private val context: Context) {
         return items
     }
 
-    private suspend fun export(composition: Composition, output: File, onProgress: (Int) -> Unit): File =
+    private suspend fun export(composition: Composition, bitrate: Int, output: File, onProgress: (Int) -> Unit): File =
         suspendCancellableCoroutine { cont ->
             val handler = Handler(Looper.getMainLooper())
             val progressHolder = ProgressHolder()
@@ -140,7 +147,7 @@ class VideoProcessor(private val context: Context) {
                 .setEncoderFactory(
                     DefaultEncoderFactory.Builder(context)
                         .setRequestedVideoEncoderSettings(
-                            VideoEncoderSettings.Builder().setBitrate(Config.VIDEO_BITRATE).build()
+                            VideoEncoderSettings.Builder().setBitrate(bitrate).build()
                         )
                         .setEnableFallback(true)
                         .build()
@@ -203,12 +210,40 @@ class VideoProcessor(private val context: Context) {
         }
     }
 
-    private fun durationUs(input: Uri): Long {
+    private data class VideoInfo(
+        val outputWidth: Int,
+        val outputHeight: Int,
+        val durationUs: Long,
+        val bitrate: Int,
+    )
+
+    /** Lee el video original y decide resolución y bitrate de salida sin perder calidad. */
+    private fun probe(input: Uri): VideoInfo {
         val retriever = MediaMetadataRetriever()
         try {
             retriever.setDataSource(context, input)
-            val ms = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
-            return ms * 1000
+            fun meta(key: Int) = retriever.extractMetadata(key)?.toLongOrNull()
+
+            var w = meta(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toInt() ?: 1080
+            var h = meta(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toInt() ?: 1920
+            val rotation = meta(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toInt() ?: 0
+            if (rotation == 90 || rotation == 270) w = h.also { h = w }
+
+            // Horizontal → recorte 9:16 al centro con la altura original (sin agrandar).
+            var outW = if (w > h) h * 9f / 16f else w.toFloat()
+            var outH = h.toFloat()
+            val scale = min(1f, Config.MAX_OUTPUT_LONG_SIDE / maxOf(outW, outH))
+            outW *= scale
+            outH *= scale
+            val width = even(outW)
+            val height = even(outH)
+
+            val sourceBitrate = meta(MediaMetadataRetriever.METADATA_KEY_BITRATE)?.toInt() ?: 0
+            val bitrate = maxOf(sourceBitrate, width * height * Config.MIN_BITS_PER_PIXEL)
+                .coerceAtMost(Config.MAX_VIDEO_BITRATE)
+
+            val durationUs = (meta(MediaMetadataRetriever.METADATA_KEY_DURATION) ?: 0L) * 1000
+            return VideoInfo(width, height, durationUs, bitrate)
         } finally {
             retriever.release()
         }

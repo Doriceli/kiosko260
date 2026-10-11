@@ -42,10 +42,14 @@ En el celular kiosko, en **Almacenamiento interno > Download > INSUMOS** coloca:
 La app pide permiso de **Videos**, **Música y audio** y **Fotos e imágenes**: acepta los tres (elige "Permitir todo"); sin ellos no puede leer la carpeta INSUMOS y el video queda sin música.
 
 ### b) Estilo para Instagram y TikTok
-- **Formato vertical 9:16 a 1080×1920** (Reels/TikTok). Si el video viene horizontal se recorta al centro.
+- **Formato vertical 9:16** (Reels/TikTok) **respetando la calidad original**:
+  - Videos verticales: salen con **su misma resolución** (1080×1920, 4K…), sin reescalar.
+  - Videos horizontales: se recortan al centro a 9:16 con su altura original (sin agrandarlos).
+  - **Bitrate igual o mayor que el del video original** (mínimo ≈12 Mbps en 1080p, ≈50 Mbps en 4K).
+  - Videos **HDR** (Samsung/iPhone): se convierten a SDR con mapeo de tonos para que no se vean lavados en WhatsApp/Instagram.
+  - Colores originales: el retoque de contraste/saturación viene **desactivado** (se puede activar en `Config.kt`).
 - **Marco** con degradado de la paleta (#FCAB14 → #F68425 → #FF7034 → #FB3A4B → #F178AF), esquinas redondeadas y un **sticker #etu2026** pequeño y semitransparente en la **esquina inferior derecha** (tamaño y opacidad: `HASHTAG_SIZE`, `HASHTAG_ALPHA`).
 - El logo queda debajo de las pestañas de arriba de TikTok/Reels. Ojo: en TikTok el disco de música giratorio aparece en la esquina inferior derecha y puede tapar el sticker en la vista del feed (en el video descargado siempre se ve).
-- Un ligero retoque de contraste y saturación (`CONTRAST`, `SATURATION` en `Config.kt`).
 - Paleta usada en la app y en la página de descarga: `#F68425 #FB3A4B #FF7034 #F54945 #FCAB14 #F178AF #E47493`.
 
 ### Efecto de velocidad (se elige en pantalla)
@@ -70,8 +74,10 @@ Las curvas están en `SpeedEffect.kt` (puntos `posición → velocidad`) y se pu
 | Ajuste | Por defecto | Significado |
 |---|---|---|
 | `DEFAULT_SPEED_EFFECT` | `SPEED_RAMP` | Efecto de velocidad al abrir la app. |
-| `OUTPUT_WIDTH` × `OUTPUT_HEIGHT` | `1080 × 1920` | Formato vertical 9:16. |
-| `VIDEO_BITRATE` | `10_000_000` | Calidad del video (10 Mbps). |
+| `MAX_OUTPUT_LONG_SIDE` | `3840` | Se respeta la resolución original; solo se reduce si supera 4K. |
+| `MIN_BITS_PER_PIXEL` | `6` | Bitrate mínimo (≈12 Mbps en 1080p, ≈50 Mbps en 4K); si el original tiene más, se usa el del original. |
+| `MAX_FRAME_RATE` | `60f` | Límite de fps en los tramos acelerados. |
+| `CONTRAST` / `SATURATION` | `0f` | Retoque de color opcional (0 = colores originales). |
 | `PROCESADOS_FOLDER` | `PROCESADOS` | Carpeta dentro de Download donde se guardan los videos terminados. |
 | `HASHTAG` | `#etu2026` | Texto del sticker del marco. |
 | `HASHTAG_SIZE` | `4f` | Tamaño del sticker (% del ancho del video). |
@@ -124,7 +130,7 @@ Si algún equipo no detecta automáticamente los videos, hay dos alternativas:
 | No detecta los videos que llegan | Revisa `QUICK_SHARE_FOLDER_LIKE` (ver tabla) y que diste permiso "Permitir todo" a videos. |
 | El QR no abre en el celular del invitado | No están en la misma red, o la red tiene aislamiento de clientes. Usa el hotspot del kiosko. |
 | En iPhone no se guarda en la galería | Safari lo guarda en Archivos → Descargas; desde ahí "Compartir → Guardar video". |
-| Error al editar | Videos 4K/HDR muy largos pueden fallar en equipos de gama baja; graba en 1080p. Revisa el Logcat (filtro `KioskoApp`). |
+| Error al editar o tarda mucho | Editar 4K a 60 fps es pesado para equipos de gama media/baja; si falla, graba en 1080p 60 fps (se ve igual de bien en Reels/TikTok). Revisa el Logcat (filtro `KioskoApp`). |
 | Sin música | Revisa que los .mp3 estén en `Download/INSUMOS` y que la app tenga el permiso "Música y audio" (Ajustes → Apps → Kiosko Video QR → Permisos). |
 
 ## 7. Ideas para después

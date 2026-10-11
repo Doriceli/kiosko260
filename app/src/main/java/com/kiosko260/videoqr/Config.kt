@@ -17,18 +17,29 @@ object Config {
     val DEFAULT_SPEED_EFFECT = SpeedEffect.SPEED_RAMP
 
     /**
-     * Formato vertical 9:16 de Instagram Reels y TikTok. Los videos horizontales se recortan
-     * al centro para llenar la pantalla.
+     * Calidad: se respeta la resolución original del video (no se reescala).
+     *  - Videos verticales: salen con su misma resolución (1080×1920, 2160×3840…).
+     *  - Videos horizontales: se recortan al centro a 9:16 (Reels/TikTok) sin agrandarlos.
+     * Solo si el lado largo supera este valor se reduce (3840 = 4K).
      */
-    const val OUTPUT_WIDTH = 1080
-    const val OUTPUT_HEIGHT = 1920
+    const val MAX_OUTPUT_LONG_SIDE = 3840
 
-    /** Calidad del video final (bits por segundo). 10 Mbps se ve nítido en Reels/TikTok. */
-    const val VIDEO_BITRATE = 10_000_000
+    /**
+     * Bitrate del video final: el mayor entre el del video original y
+     * (ancho × alto × [MIN_BITS_PER_PIXEL]) ≈ 12 Mbps en 1080p y ≈ 50 Mbps en 4K.
+     */
+    const val MIN_BITS_PER_PIXEL = 6
+    const val MAX_VIDEO_BITRATE = 100_000_000
 
-    /** Retoque "aesthetic": un poco más de contraste y color. 0 = sin cambios. */
-    const val CONTRAST = 0.08f
-    const val SATURATION = 12f
+    /**
+     * En los tramos acelerados del speed ramp un video de 60 fps llegaría a ~100 fps, algo que
+     * muchos codificadores y redes no aceptan. Se limita a este valor (no afecta la cámara lenta).
+     */
+    const val MAX_FRAME_RATE = 60f
+
+    /** Retoque de color opcional (0 = colores originales, sin retoque). Ej.: 0.08f y 12f. */
+    const val CONTRAST = 0f
+    const val SATURATION = 0f
 
     /**
      * Carpeta de insumos dentro de "Almacenamiento interno":
