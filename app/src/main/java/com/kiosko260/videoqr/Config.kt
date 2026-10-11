@@ -4,8 +4,14 @@ import android.graphics.Color
 
 /** Ajustes del kiosko. Cambia aquí los valores y vuelve a compilar. */
 object Config {
-    /** Texto del sticker del marco. */
+    /** Texto del sticker del marco (esquina inferior derecha). */
     const val HASHTAG = "#etu2026"
+
+    /** Tamaño de letra del sticker, en % del ancho del video (antes 8; 4 = discreto). */
+    const val HASHTAG_SIZE = 4f
+
+    /** Opacidad del sticker: 255 = sólido, 200 ≈ 80 %. */
+    const val HASHTAG_ALPHA = 215
 
     /** Efecto de velocidad que se usa al abrir la app (se puede cambiar en pantalla). */
     val DEFAULT_SPEED_EFFECT = SpeedEffect.SPEED_RAMP

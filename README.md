@@ -43,8 +43,8 @@ La app pide permiso de **Videos**, **Música y audio** y **Fotos e imágenes**: 
 
 ### b) Estilo para Instagram y TikTok
 - **Formato vertical 9:16 a 1080×1920** (Reels/TikTok). Si el video viene horizontal se recorta al centro.
-- **Marco** con degradado de la paleta (#FCAB14 → #F68425 → #FF7034 → #FB3A4B → #F178AF), esquinas redondeadas y un **sticker #etu2026** ligeramente girado.
-- El logo y el sticker respetan las *zonas seguras* de TikTok/Reels: no quedan tapados por las pestañas de arriba, la descripción de abajo ni los botones de la derecha.
+- **Marco** con degradado de la paleta (#FCAB14 → #F68425 → #FF7034 → #FB3A4B → #F178AF), esquinas redondeadas y un **sticker #etu2026** pequeño y semitransparente en la **esquina inferior derecha** (tamaño y opacidad: `HASHTAG_SIZE`, `HASHTAG_ALPHA`).
+- El logo queda debajo de las pestañas de arriba de TikTok/Reels. Ojo: en TikTok el disco de música giratorio aparece en la esquina inferior derecha y puede tapar el sticker en la vista del feed (en el video descargado siempre se ve).
 - Un ligero retoque de contraste y saturación (`CONTRAST`, `SATURATION` en `Config.kt`).
 - Paleta usada en la app y en la página de descarga: `#F68425 #FB3A4B #FF7034 #F54945 #FCAB14 #F178AF #E47493`.
 
@@ -74,6 +74,8 @@ Las curvas están en `SpeedEffect.kt` (puntos `posición → velocidad`) y se pu
 | `VIDEO_BITRATE` | `10_000_000` | Calidad del video (10 Mbps). |
 | `PROCESADOS_FOLDER` | `PROCESADOS` | Carpeta dentro de Download donde se guardan los videos terminados. |
 | `HASHTAG` | `#etu2026` | Texto del sticker del marco. |
+| `HASHTAG_SIZE` | `4f` | Tamaño del sticker (% del ancho del video). |
+| `HASHTAG_ALPHA` | `215` | Opacidad del sticker (255 = sólido). |
 | `INSUMOS_FOLDER` | `Download/INSUMOS` | Carpeta con el logo (`marco.png`) y las canciones. |
 | `LOGO_WIDTH_FRACTION` | `0.30f` | Tamaño del logo (30 % del ancho). |
 | `QUICK_SHARE_FOLDER_LIKE` | `%Quick Share%` | Carpeta que se vigila. Samsung usa `Download/Quick Share/`. **En Pixel/Motorola/Xiaomi, Quick Share guarda en `Download/`: cámbialo a `Download/%`.** |

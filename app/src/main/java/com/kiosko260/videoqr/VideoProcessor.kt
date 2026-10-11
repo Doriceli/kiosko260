@@ -218,8 +218,8 @@ class VideoProcessor(private val context: Context) {
 
     /**
      * Marco con degradado (amarillo → naranja → rojo → rosa), sticker con el hashtag y logo.
-     * Respeta las "zonas seguras" de TikTok/Reels: nada importante arriba del todo (pestañas),
-     * en el 20 % inferior (descripción) ni pegado al borde derecho (botones).
+     * El logo queda debajo de las pestañas de TikTok/Reels; el sticker, pequeño en la esquina
+     * inferior derecha ([Config.HASHTAG_SIZE]) para no tapar el video.
      */
     private fun buildOverlay(width: Int, height: Int): Bitmap {
         val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
@@ -240,32 +240,34 @@ class VideoProcessor(private val context: Context) {
             shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), palette, null, Shader.TileMode.CLAMP)
         })
 
-        // Sticker con el hashtag, un poco girado, encima de la zona de la descripción.
+        // Sticker pequeño con el hashtag en la esquina inferior derecha, apenas girado y semitransparente.
+        val size = Config.HASHTAG_SIZE * unit
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
-            textSize = 8f * unit
+            textSize = size
             textAlign = Paint.Align.CENTER
-            setShadowLayer(0.5f * unit, 0f, 0.3f * unit, Config.CORAL)
+            setShadowLayer(0.3f * unit, 0f, 0.2f * unit, Config.CORAL)
         }
         val textWidth = textPaint.measureText(Config.HASHTAG)
-        val pillWidth = textWidth + 10f * unit
-        val pillHeight = 13f * unit
-        val centerX = width / 2f
-        val centerY = height * 0.74f
-        val pill = RectF(centerX - pillWidth / 2, centerY - pillHeight / 2, centerX + pillWidth / 2, centerY + pillHeight / 2)
-        canvas.save()
-        canvas.rotate(-4f, centerX, centerY)
+        val pillWidth = textWidth + 1.2f * size
+        val pillHeight = 1.6f * size
+        val margin = border + 3.5f * unit
+        val pill = RectF(width - margin - pillWidth, height - margin - pillHeight, width - margin, height - margin)
+        val centerX = pill.centerX()
+        val centerY = pill.centerY()
+        canvas.saveLayerAlpha(null, Config.HASHTAG_ALPHA)
+        canvas.rotate(-3f, centerX, centerY)
         canvas.drawRoundRect(pill, pillHeight / 2, pillHeight / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = LinearGradient(
                 pill.left, 0f, pill.right, 0f,
                 intArrayOf(Config.AMARILLO, Config.NARANJA, Config.ROJO, Config.ROSA), null, Shader.TileMode.CLAMP,
             )
-            setShadowLayer(1.5f * unit, 0f, 0.8f * unit, Color.argb(110, 0, 0, 0))
+            setShadowLayer(0.8f * unit, 0f, 0.4f * unit, Color.argb(90, 0, 0, 0))
         })
         canvas.drawRoundRect(pill, pillHeight / 2, pillHeight / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
             style = Paint.Style.STROKE
-            strokeWidth = 0.7f * unit
+            strokeWidth = 0.4f * unit
             color = Color.WHITE
         })
         val baseline = centerY - (textPaint.descent() + textPaint.ascent()) / 2
