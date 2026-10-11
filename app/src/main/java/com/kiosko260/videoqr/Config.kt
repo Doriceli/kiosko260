@@ -4,7 +4,10 @@ import android.graphics.Color
 
 /** Ajustes del kiosko. Cambia aquí los valores y vuelve a compilar. */
 object Config {
-    /** Texto del sticker del marco (esquina inferior derecha). */
+    /** Borde de colores alrededor del video. false = video a pantalla completa, sin margen. */
+    const val SHOW_BORDER = false
+
+    /** Texto del sticker (esquina inferior derecha). */
     const val HASHTAG = "#etu2026"
 
     /** Tamaño de letra del sticker, en % del ancho del video (antes 8; 4 = discreto). */

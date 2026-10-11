@@ -252,7 +252,8 @@ class VideoProcessor(private val context: Context) {
     private fun even(value: Float): Int = (value / 2f).roundToInt() * 2
 
     /**
-     * Marco con degradado (amarillo → naranja → rojo → rosa), sticker con el hashtag y logo.
+     * Sticker con el hashtag y logo sobre el video a pantalla completa. El borde con degradado
+     * es opcional ([Config.SHOW_BORDER], desactivado).
      * El logo queda debajo de las pestañas de TikTok/Reels; el sticker, pequeño en la esquina
      * inferior derecha ([Config.HASHTAG_SIZE]) para no tapar el video.
      */
@@ -261,19 +262,20 @@ class VideoProcessor(private val context: Context) {
         val canvas = Canvas(result)
         val unit = width / 100f // 1 % del ancho
 
-        val palette = intArrayOf(Config.AMARILLO, Config.NARANJA, Config.NARANJA_FUEGO, Config.ROJO, Config.ROSA)
-
-        // Borde con degradado diagonal y esquinas interiores redondeadas.
-        val border = 2.2f * unit
-        val radius = 5f * unit
-        val frame = Path().apply {
-            fillType = Path.FillType.EVEN_ODD
-            addRect(0f, 0f, width.toFloat(), height.toFloat(), Path.Direction.CW)
-            addRoundRect(RectF(border, border, width - border, height - border), radius, radius, Path.Direction.CW)
+        // Borde opcional con degradado diagonal y esquinas interiores redondeadas.
+        val border = if (Config.SHOW_BORDER) 2.2f * unit else 0f
+        if (Config.SHOW_BORDER) {
+            val palette = intArrayOf(Config.AMARILLO, Config.NARANJA, Config.NARANJA_FUEGO, Config.ROJO, Config.ROSA)
+            val radius = 5f * unit
+            val frame = Path().apply {
+                fillType = Path.FillType.EVEN_ODD
+                addRect(0f, 0f, width.toFloat(), height.toFloat(), Path.Direction.CW)
+                addRoundRect(RectF(border, border, width - border, height - border), radius, radius, Path.Direction.CW)
+            }
+            canvas.drawPath(frame, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), palette, null, Shader.TileMode.CLAMP)
+            })
         }
-        canvas.drawPath(frame, Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), palette, null, Shader.TileMode.CLAMP)
-        })
 
         // Sticker pequeño con el hashtag en la esquina inferior derecha, apenas girado y semitransparente.
         val size = Config.HASHTAG_SIZE * unit

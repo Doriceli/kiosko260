@@ -3,7 +3,7 @@
 App para un celular/tablet "kiosko" que:
 
 1. **Recibe videos por Quick Share** (los detecta solo en cuanto llegan).
-2. **Los edita** en formato vertical para Reels/TikTok: marco con degradado y sticker **#etu2026**, logo (`marco.png` de `Download/INSUMOS`) mediano arriba a la izquierda, **speed ramp / cámara lenta progresiva** y **música** en lugar del audio original.
+2. **Los edita** en formato vertical para Reels/TikTok: video a pantalla completa (sin margen) con sticker **#etu2026**, logo (`marco.png` de `Download/INSUMOS`) mediano arriba a la izquierda, **speed ramp / cámara lenta progresiva** y **música** en lugar del audio original.
 3. **Muestra un QR**: el invitado lo escanea con su celular, ve el video, lo descarga y lo sube a Instagram, TikTok, WhatsApp, etc.
 
 Todo pasa dentro del celular (edición con [Media3 Transformer](https://developer.android.com/media/media3/transformer), servidor web local con NanoHTTPD y QR con ZXing). No hace falta pagar servidores ni tener internet: basta con una red Wi-Fi local.
@@ -48,7 +48,7 @@ La app pide permiso de **Videos**, **Música y audio** y **Fotos e imágenes**: 
   - **Bitrate igual o mayor que el del video original** (mínimo ≈12 Mbps en 1080p, ≈50 Mbps en 4K).
   - Videos **HDR** (Samsung/iPhone): se convierten a SDR con mapeo de tonos para que no se vean lavados en WhatsApp/Instagram.
   - Colores originales: el retoque de contraste/saturación viene **desactivado** (se puede activar en `Config.kt`).
-- **Marco** con degradado de la paleta (#FCAB14 → #F68425 → #FF7034 → #FB3A4B → #F178AF), esquinas redondeadas y un **sticker #etu2026** pequeño y semitransparente en la **esquina inferior derecha** (tamaño y opacidad: `HASHTAG_SIZE`, `HASHTAG_ALPHA`).
+- **Sin margen**: el video ocupa toda la pantalla (el borde con degradado se puede reactivar con `SHOW_BORDER = true`). Encima va un **sticker #etu2026** pequeño y semitransparente en la **esquina inferior derecha** (tamaño y opacidad: `HASHTAG_SIZE`, `HASHTAG_ALPHA`).
 - El logo queda debajo de las pestañas de arriba de TikTok/Reels. Ojo: en TikTok el disco de música giratorio aparece en la esquina inferior derecha y puede tapar el sticker en la vista del feed (en el video descargado siempre se ve).
 - Paleta usada en la app y en la página de descarga: `#F68425 #FB3A4B #FF7034 #F54945 #FCAB14 #F178AF #E47493`.
 
@@ -79,6 +79,7 @@ Las curvas están en `SpeedEffect.kt` (puntos `posición → velocidad`) y se pu
 | `MAX_FRAME_RATE` | `60f` | Límite de fps en los tramos acelerados. |
 | `CONTRAST` / `SATURATION` | `0f` | Retoque de color opcional (0 = colores originales). |
 | `PROCESADOS_FOLDER` | `PROCESADOS` | Carpeta dentro de Download donde se guardan los videos terminados. |
+| `SHOW_BORDER` | `false` | Borde de colores alrededor del video (desactivado = sin margen). |
 | `HASHTAG` | `#etu2026` | Texto del sticker del marco. |
 | `HASHTAG_SIZE` | `4f` | Tamaño del sticker (% del ancho del video). |
 | `HASHTAG_ALPHA` | `215` | Opacidad del sticker (255 = sólido). |
