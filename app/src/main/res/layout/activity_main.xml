@@ -184,6 +184,23 @@
                     android:textColor="@color/blanco"
                     android:textStyle="bold" />
 
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/doubleLogoSwitch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/double_logo"
+                    android:textColor="@color/blanco"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/doubleLogoWarning"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/double_logo_missing"
+                    android:textColor="@color/blanco"
+                    android:visibility="gone" />
+
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

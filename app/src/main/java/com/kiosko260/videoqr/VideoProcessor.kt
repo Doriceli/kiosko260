@@ -66,11 +66,12 @@ class VideoProcessor(private val context: Context) {
         input: Uri,
         music: MusicTrack?,
         speedEffect: SpeedEffect,
+        layout: OverlayLayout,
         output: File,
         onProgress: (Int) -> Unit,
     ): File {
         val info = withContext(Dispatchers.IO) { probe(input) }
-        val overlay = withContext(Dispatchers.Default) { buildOverlay(info.outputWidth, info.outputHeight) }
+        val overlay = withContext(Dispatchers.Default) { buildOverlay(info.outputWidth, info.outputHeight, layout) }
         val speed = speedEffect.toSpeedProvider(info.durationUs)
 
         val videoEffects = mutableListOf<Effect>(
@@ -257,7 +258,7 @@ class VideoProcessor(private val context: Context) {
      * El logo queda debajo de las pestañas de TikTok/Reels; el sticker, pequeño en la esquina
      * inferior derecha ([Config.HASHTAG_SIZE]) para no tapar el video.
      */
-    private fun buildOverlay(width: Int, height: Int): Bitmap {
+    private fun buildOverlay(width: Int, height: Int, layout: OverlayLayout): Bitmap {
         val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
         val unit = width / 100f // 1 % del ancho
@@ -276,6 +277,8 @@ class VideoProcessor(private val context: Context) {
                 shader = LinearGradient(0f, 0f, width.toFloat(), height.toFloat(), palette, null, Shader.TileMode.CLAMP)
             })
         }
+
+        if (layout == OverlayLayout.DOUBLE_TOP && drawTopBand(canvas, width, height)) return result
 
         // Sticker pequeño con el hashtag en la esquina inferior derecha, apenas girado y semitransparente.
         val size = Config.HASHTAG_SIZE * unit
@@ -325,4 +328,44 @@ class VideoProcessor(private val context: Context) {
         }
         return result
     }
+
+    /**
+     * Diseño "doble logo": en la franja superior (1/9 de la altura) va hashtag.png arriba y
+     * marco.png abajo, centrados y sin deformar. Devuelve false si no hay hashtag.png, para que
+     * se use el diseño clásico.
+     */
+    private fun drawTopBand(canvas: Canvas, width: Int, height: Int): Boolean {
+        val hashtag = customization.loadInsumoImage(Config.HASHTAG_IMAGE_FILE) ?: return false
+        val logo = customization.loadInsumoImage(Config.LOGO_FILE)
+
+        val band = height.toFloat() / Config.TOP_BAND_FRACTION_DENOMINATOR
+        val padding = band * 0.06f
+        val gap = band * 0.04f
+        val images = listOfNotNull(hashtag, logo)
+        val slotHeight = (band - 2 * padding - gap * (images.size - 1)) / images.size
+        val maxWidth = width * 0.9f
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+
+        var top = padding
+        for (image in images) {
+            val scale = min(maxWidth / image.width, slotHeight / image.height)
+            val w = image.width * scale
+            val h = image.height * scale
+            val left = (width - w) / 2
+            val y = top + (slotHeight - h) / 2
+            canvas.drawBitmap(image, null, RectF(left, y, left + w, y + h), paint)
+            image.recycle()
+            top += slotHeight + gap
+        }
+        return true
+    }
+}
+
+/** Cómo se colocan los logos sobre el video. */
+enum class OverlayLayout {
+    /** marco.png arriba a la izquierda + sticker #etu2026 abajo a la derecha. */
+    CLASSIC,
+
+    /** hashtag.png arriba y marco.png abajo, ocupando el primer 1/9 de la pantalla. */
+    DOUBLE_TOP,
 }

@@ -5,6 +5,8 @@
     <string name="tab_history">📁 Procesados</string>
     <string name="qr_description">Código QR para descargar el video</string>
     <string name="auto_process">Editar automáticamente los videos que lleguen por Quick Share</string>
+    <string name="double_logo">Logos arriba: hashtag.png + marco.png (1/9 de la pantalla). Apagado = diseño clásico</string>
+    <string name="double_logo_missing">⚠️ No se encontró hashtag.png en Download &gt; INSUMOS: se usará el diseño clásico.</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>

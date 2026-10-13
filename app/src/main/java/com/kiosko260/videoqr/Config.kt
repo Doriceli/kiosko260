@@ -52,6 +52,14 @@ object Config {
     const val INSUMOS_FOLDER = "Download/INSUMOS"
     const val LOGO_FILE = "marco.png"
 
+    /**
+     * Diseño "doble logo" (se activa con el interruptor de la pantalla, sin recompilar):
+     * franja superior de 1/[TOP_BAND_FRACTION_DENOMINATOR] de la pantalla con [HASHTAG_IMAGE_FILE]
+     * arriba y [LOGO_FILE] abajo. Si falta hashtag.png se usa el diseño clásico.
+     */
+    const val HASHTAG_IMAGE_FILE = "hashtag.png"
+    const val TOP_BAND_FRACTION_DENOMINATOR = 9
+
     /** Carpeta donde se guardan los videos terminados (Almacenamiento interno > Download > PROCESADOS). */
     const val PROCESADOS_FOLDER = "PROCESADOS"
 

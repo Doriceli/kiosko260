@@ -55,6 +55,12 @@ class KioskoApp : Application() {
     @Volatile var selectedTrack: MusicTrack? = null
     @Volatile var speedEffect: SpeedEffect = Config.DEFAULT_SPEED_EFFECT
 
+    /** Diseño de logos; se guarda para que siga igual al reabrir la app. */
+    var overlayLayout: OverlayLayout
+        get() = OverlayLayout.entries.getOrNull(prefs.getInt(KEY_LAYOUT, 0)) ?: OverlayLayout.CLASSIC
+        set(value) = prefs.edit().putInt(KEY_LAYOUT, value.ordinal).apply()
+    private val prefs by lazy { getSharedPreferences("ajustes", MODE_PRIVATE) }
+
     override fun onCreate() {
         super.onCreate()
         library = VideoLibrary(this)
@@ -119,11 +125,12 @@ class KioskoApp : Application() {
             val id = library.newId()
             val track = selectedTrack ?: withContext(Dispatchers.IO) { customization.musicTracks() }.randomOrNull()
             val effect = speedEffect
+            val layout = overlayLayout
             _state.update {
                 it.copy(status = "Editando video" + (track?.let { t -> " con «${t.title}»" } ?: "") + "…", progress = 0)
             }
             try {
-                val exported = processor.process(uri, track, effect, File(cacheDir, "$id.mp4")) { p ->
+                val exported = processor.process(uri, track, effect, layout, File(cacheDir, "$id.mp4")) { p ->
                     _state.update { it.copy(progress = p) }
                 }
                 val number = counter.increment()
@@ -154,5 +161,6 @@ class KioskoApp : Application() {
 
     private companion object {
         const val TAG = "KioskoApp"
+        const val KEY_LAYOUT = "diseno"
     }
 }

@@ -41,6 +41,14 @@ En el celular kiosko, en **Almacenamiento interno > Download > INSUMOS** coloca:
 
 La app pide permiso de **Videos**, **Música y audio** y **Fotos e imágenes**: acepta los tres (elige "Permitir todo"); sin ellos no puede leer la carpeta INSUMOS y el video queda sin música.
 
+### Diseño "doble logo" (opcional, sin recompilar)
+En la pantalla del kiosko hay un interruptor **"Logos arriba: hashtag.png + marco.png"**:
+- **Encendido:** en la franja superior (el primer **1/9** de la altura del video) va `hashtag.png` arriba y `marco.png` debajo, centrados y sin deformar. En este modo no se dibuja el sticker #etu2026 ni el logo de la esquina.
+- **Apagado:** diseño clásico (marco.png arriba a la izquierda + sticker #etu2026 abajo a la derecha).
+- Coloca `hashtag.png` (PNG con fondo transparente) en **Download > INSUMOS**. Si no está, la app avisa y usa el diseño clásico.
+- La elección se recuerda al cerrar la app. El tamaño de la franja se cambia en `TOP_BAND_FRACTION_DENOMINATOR` (`Config.kt`).
+- Ojo: en TikTok las pestañas "Siguiendo / Para ti" aparecen sobre la parte de arriba del video y pueden tapar parte de la franja en el feed.
+
 ### b) Estilo para Instagram y TikTok
 - **Formato vertical 9:16** (Reels/TikTok) **respetando la calidad original**:
   - Videos verticales: salen con **su misma resolución** (1080×1920, 4K…), sin reescalar.

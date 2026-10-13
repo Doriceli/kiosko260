@@ -25,15 +25,21 @@ class Customization(private val context: Context) {
     private val insumosDir: File =
         File(Environment.getExternalStorageDirectory(), Config.INSUMOS_FOLDER)
 
-    fun loadLogo(): Bitmap? {
-        insumosImageUri(Config.LOGO_FILE)?.let { uri ->
+    /** Imagen de INSUMOS (o de la carpeta de personalización), o null si no existe. */
+    fun loadInsumoImage(fileName: String): Bitmap? {
+        insumosImageUri(fileName)?.let { uri ->
             runCatching {
                 context.contentResolver.openInputStream(uri)?.use { BitmapFactory.decodeStream(it) }
             }.getOrNull()?.let { return it }
         }
-        listOf(File(insumosDir, Config.LOGO_FILE), File(folder, Config.LOGO_FILE)).forEach { file ->
+        listOf(File(insumosDir, fileName), File(folder, fileName)).forEach { file ->
             if (file.canRead()) BitmapFactory.decodeFile(file.absolutePath)?.let { return it }
         }
+        return null
+    }
+
+    fun loadLogo(): Bitmap? {
+        loadInsumoImage(Config.LOGO_FILE)?.let { return it }
         return runCatching {
             context.assets.open(Config.FALLBACK_LOGO_ASSET).use { BitmapFactory.decodeStream(it) }
         }.getOrNull()

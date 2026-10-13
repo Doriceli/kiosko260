@@ -82,6 +82,11 @@ class MainActivity : AppCompatActivity() {
             if (checked) ensurePermissionAndWatch() else stopWatcher()
         }
         binding.hashtag.text = Config.HASHTAG
+        binding.doubleLogoSwitch.isChecked = app.overlayLayout == OverlayLayout.DOUBLE_TOP
+        binding.doubleLogoSwitch.setOnCheckedChangeListener { _, checked ->
+            app.overlayLayout = if (checked) OverlayLayout.DOUBLE_TOP else OverlayLayout.CLASSIC
+            updateDoubleLogoWarning()
+        }
         setupSpeedSpinner()
         setupMusicSpinner()
         binding.folderInfo.text = getString(R.string.folders_info, Config.INSUMOS_FOLDER, Config.PROCESADOS_FOLDER)
@@ -106,6 +111,7 @@ class MainActivity : AppCompatActivity() {
         app.startServer()
         app.refreshCounter()
         setupMusicSpinner() // por si se copiaron canciones nuevas
+        updateDoubleLogoWarning()
         val ip = NetworkUtils.localIpAddress()
         binding.networkInfo.text =
             if (ip != null) getString(R.string.network_ok, ip, Config.SERVER_PORT)
@@ -208,6 +214,20 @@ class MainActivity : AppCompatActivity() {
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
         }
         binding.musicWarning.visibility = if (tracks.isEmpty()) View.VISIBLE else View.GONE
+    }
+
+    /** Avisa si el diseño doble está activo pero no se encuentra hashtag.png en INSUMOS. */
+    private fun updateDoubleLogoWarning() {
+        if (app.overlayLayout != OverlayLayout.DOUBLE_TOP) {
+            binding.doubleLogoWarning.visibility = View.GONE
+            return
+        }
+        lifecycleScope.launch {
+            val found = withContext(Dispatchers.IO) {
+                app.customization.loadInsumoImage(Config.HASHTAG_IMAGE_FILE)?.also { it.recycle() } != null
+            }
+            binding.doubleLogoWarning.visibility = if (found) View.GONE else View.VISIBLE
+        }
     }
 
     private fun handleShareIntent(intent: Intent?) {
