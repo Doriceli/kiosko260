@@ -278,7 +278,10 @@ class VideoProcessor(private val context: Context) {
             })
         }
 
-        if (layout == OverlayLayout.DOUBLE_TOP && drawTopBand(canvas, width, height)) return result
+        if (layout == OverlayLayout.DOUBLE_TOP && drawTopBand(canvas, width, height)) {
+            drawPlainHashtag(canvas, width, height, unit, border)
+            return result
+        }
 
         // Sticker pequeño con el hashtag en la esquina inferior derecha, apenas girado y semitransparente.
         val size = Config.HASHTAG_SIZE * unit
@@ -330,6 +333,22 @@ class VideoProcessor(private val context: Context) {
     }
 
     /**
+     * Hashtag en letras blancas sin fondo, abajo a la derecha (diseño "doble logo").
+     * Lleva una sombra suave para que se lea también sobre fondos claros.
+     */
+    private fun drawPlainHashtag(canvas: Canvas, width: Int, height: Int, unit: Float, border: Float) {
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textSize = Config.HASHTAG_SIZE * unit
+            textAlign = Paint.Align.RIGHT
+            setShadowLayer(0.5f * unit, 0f, 0.2f * unit, Color.argb(140, 0, 0, 0))
+        }
+        val margin = border + 3.5f * unit
+        canvas.drawText(Config.HASHTAG, width - margin, height - margin - paint.descent(), paint)
+    }
+
+    /**
      * Diseño "doble logo": en la franja superior (1/9 de la altura) va hashtag.png arriba y
      * marco.png abajo, centrados y sin deformar. Devuelve false si no hay hashtag.png, para que
      * se use el diseño clásico.
@@ -366,6 +385,6 @@ enum class OverlayLayout {
     /** marco.png arriba a la izquierda + sticker #etu2026 abajo a la derecha. */
     CLASSIC,
 
-    /** hashtag.png arriba y marco.png abajo, ocupando el primer 1/9 de la pantalla. */
+    /** hashtag.png arriba y marco.png abajo en el primer 1/9 de la pantalla + #etu2026 blanco abajo a la derecha. */
     DOUBLE_TOP,
 }

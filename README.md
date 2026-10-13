@@ -43,7 +43,7 @@ La app pide permiso de **Videos**, **Música y audio** y **Fotos e imágenes**: 
 
 ### Diseño "doble logo" (opcional, sin recompilar)
 En la pantalla del kiosko hay un interruptor **"Logos arriba: hashtag.png + marco.png"**:
-- **Encendido:** en la franja superior (el primer **1/9** de la altura del video) va `hashtag.png` arriba y `marco.png` debajo, centrados y sin deformar. En este modo no se dibuja el sticker #etu2026 ni el logo de la esquina.
+- **Encendido:** en la franja superior (el primer **1/9** de la altura del video) va `hashtag.png` arriba y `marco.png` debajo, centrados y sin deformar. Además, abajo a la derecha va **#etu2026 en letras blancas sin fondo** (con una sombra suave para que se lea sobre fondos claros). En este modo no se dibujan el sticker de colores ni el logo de la esquina.
 - **Apagado:** diseño clásico (marco.png arriba a la izquierda + sticker #etu2026 abajo a la derecha).
 - Coloca `hashtag.png` (PNG con fondo transparente) en **Download > INSUMOS**. Si no está, la app avisa y usa el diseño clásico.
 - La elección se recuerda al cerrar la app. El tamaño de la franja se cambia en `TOP_BAND_FRACTION_DENOMINATOR` (`Config.kt`).
