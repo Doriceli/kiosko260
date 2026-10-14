@@ -18,7 +18,14 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** El video cuyo QR se muestra en pantalla. */
-data class SharedVideo(val id: String, val url: String?, val thumbnail: String?, val number: Int?, val label: String)
+data class SharedVideo(
+    val id: String,
+    val url: String?,
+    val thumbnail: String?,
+    val number: Int?,
+    val label: String,
+    val authorized: Boolean = false,
+)
 
 /** Estado que muestra la pantalla. */
 data class KioskState(
@@ -29,6 +36,9 @@ data class KioskState(
     val todayCount: Int = 0,
     /** Cambia cada vez que se termina un video, para refrescar la pestaña de procesados. */
     val libraryVersion: Int = 0,
+    /** Red Wi-Fi propia del kiosko (sin internet), si está activa. */
+    val hotspot: HotspotInfo? = null,
+    val hotspotError: String? = null,
 )
 
 /**
@@ -61,12 +71,32 @@ class KioskoApp : Application() {
         set(value) = prefs.edit().putInt(KEY_LAYOUT, value.ordinal).apply()
     private val prefs by lazy { getSharedPreferences("ajustes", MODE_PRIVATE) }
 
+    /** Hashtag de la esquina inferior derecha; se edita en pantalla antes de generar el video. */
+    var hashtag: String
+        get() = prefs.getString(KEY_HASHTAG, null) ?: Config.HASHTAG
+        set(value) = prefs.edit().putString(KEY_HASHTAG, value.trim()).apply()
+
+    /** Si el kiosko debe crear su propia red Wi-Fi sin internet (se recuerda). */
+    var useOwnNetwork: Boolean
+        get() = prefs.getBoolean(KEY_OWN_NETWORK, true)
+        set(value) = prefs.edit().putBoolean(KEY_OWN_NETWORK, value).apply()
+
+    private lateinit var hotspot: KioskHotspot
+
     override fun onCreate() {
         super.onCreate()
         library = VideoLibrary(this)
         customization = Customization(this)
         counter = DailyCounter(this)
         processor = VideoProcessor(this)
+        hotspot = KioskHotspot(this) { info, error ->
+            _state.update { it.copy(hotspot = info, hotspotError = error) }
+            // La IP de la red nueva tarda un instante en estar lista: se recalcula el QR.
+            scope.launch {
+                kotlinx.coroutines.delay(1_500)
+                refreshCurrentUrl()
+            }
+        }
         refreshCounter()
         startServer()
         scope.launch { processQueue() }
@@ -84,13 +114,38 @@ class KioskoApp : Application() {
 
     fun startServer() {
         if (server?.isAlive == true) return
-        server = VideoServer(library, Config.SERVER_PORT).also {
+        server = VideoServer(library, Config.SERVER_PORT) { hashtag }.also {
             runCatching { it.start() }.onFailure { e -> Log.e(TAG, "No se pudo iniciar el servidor", e) }
         }
     }
 
+    /** Enlace de descarga. Se arma con la IP local del kiosko: no se consulta nada en internet. */
     fun shareUrl(id: String): String? =
-        NetworkUtils.localIpAddress()?.let { "http://$it:${Config.SERVER_PORT}/v/$id" }
+        NetworkUtils.localIpAddress(preferHotspot = hotspot.isActive)?.let { "http://$it:${Config.SERVER_PORT}/v/$id" }
+
+    /** Crea la red Wi-Fi propia (MainActivity ya pidió los permisos). */
+    fun startOwnNetwork() = hotspot.start()
+
+    fun stopOwnNetwork() = hotspot.stop()
+
+    /** Recalcula el QR del video en pantalla (p. ej. al cambiar de red). */
+    fun refreshCurrentUrl() {
+        _state.update { state ->
+            val current = state.current ?: return@update state
+            state.copy(current = current.copy(url = shareUrl(current.id)))
+        }
+    }
+
+    /** Casilla "Autorizo compartir mi video en redes sociales" del video en pantalla. */
+    fun setAuthorized(authorized: Boolean) {
+        val current = _state.value.current ?: return
+        if (current.authorized == authorized) return
+        _state.update { it.copy(current = current.copy(authorized = authorized)) }
+        scope.launch {
+            withContext(Dispatchers.IO) { library.setAuthorized(current.id, authorized) }
+            _state.update { it.copy(libraryVersion = it.libraryVersion + 1) }
+        }
+    }
 
     /** Vuelve a mostrar el QR de un video de la pestaña "Procesados". */
     fun showExisting(video: ProcessedVideo) {
@@ -100,8 +155,10 @@ class KioskoApp : Application() {
             _state.update {
                 it.copy(
                     status = if (url != null) "Escanea el QR para descargar este video"
-                    else "El kiosko no está conectado a Wi-Fi/hotspot",
-                    current = SharedVideo(video.id, url, thumbnail?.absolutePath, video.number, labelFor(video)),
+                    else "Activa la red del kiosko para mostrar el QR",
+                    current = SharedVideo(
+                        video.id, url, thumbnail?.absolutePath, video.number, labelFor(video), video.authorized,
+                    ),
                 )
             }
         }
@@ -117,7 +174,11 @@ class KioskoApp : Application() {
 
     fun labelFor(video: ProcessedVideo): String {
         val time = video.createdAt?.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")) ?: ""
-        return listOfNotNull(video.number?.let { "Video #$it" }, time.ifEmpty { null }).joinToString(" · ")
+        return listOfNotNull(
+            video.number?.let { "Video #$it" },
+            time.ifEmpty { null },
+            "✅".takeIf { video.authorized },
+        ).joinToString(" · ")
     }
 
     private suspend fun processQueue() {
@@ -126,11 +187,12 @@ class KioskoApp : Application() {
             val track = selectedTrack ?: withContext(Dispatchers.IO) { customization.musicTracks() }.randomOrNull()
             val effect = speedEffect
             val layout = overlayLayout
+            val tag = hashtag
             _state.update {
                 it.copy(status = "Editando video" + (track?.let { t -> " con «${t.title}»" } ?: "") + "…", progress = 0)
             }
             try {
-                val exported = processor.process(uri, track, effect, layout, File(cacheDir, "$id.mp4")) { p ->
+                val exported = processor.process(uri, track, effect, layout, tag, File(cacheDir, "$id.mp4")) { p ->
                     _state.update { it.copy(progress = p) }
                 }
                 val number = counter.increment()
@@ -143,7 +205,7 @@ class KioskoApp : Application() {
                 _state.update {
                     it.copy(
                         status = if (url != null) "¡Listo! Escanea el QR para descargar tu video"
-                        else "Video listo, pero el kiosko no está conectado a Wi-Fi/hotspot",
+                        else "Video listo: activa la red del kiosko para mostrar el QR",
                         progress = null,
                         current = SharedVideo(id, url, library.thumbnailFile(id).absolutePath, number, labelFor(saved)),
                         todayCount = number,
@@ -162,5 +224,7 @@ class KioskoApp : Application() {
     private companion object {
         const val TAG = "KioskoApp"
         const val KEY_LAYOUT = "diseno"
+        const val KEY_HASHTAG = "hashtag"
+        const val KEY_OWN_NETWORK = "red_propia"
     }
 }

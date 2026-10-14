@@ -13,7 +13,11 @@ import java.io.FileInputStream
  *  - `/t/<id>.jpg`  la miniatura (portada del video).
  * El celular del cliente debe estar en la misma red Wi-Fi (o conectado al hotspot del kiosko).
  */
-class VideoServer(private val library: VideoLibrary, port: Int) : NanoHTTPD(port) {
+class VideoServer(
+    private val library: VideoLibrary,
+    port: Int,
+    private val hashtag: () -> String,
+) : NanoHTTPD(port) {
 
     override fun serve(session: IHTTPSession): Response {
         val path = session.uri
@@ -51,11 +55,11 @@ class VideoServer(private val library: VideoLibrary, port: Int) : NanoHTTPD(port
                     box-shadow:0 6px 0 #F54945}
               p{font-size:15px;max-width:420px;margin:8px auto;text-shadow:0 1px 2px rgba(0,0,0,.25)}
             </style></head><body>
-            <h1>${Config.HASHTAG}</h1>
+            <h1>${hashtag()}</h1>
             <h2>¡Tu video está listo! 🎬</h2>
             <video src="/f/$id.mp4" poster="/t/$id.jpg" controls playsinline loop></video>
             <a class="btn" href="/f/$id.mp4?dl=1" download="video-$id.mp4">⬇️ Descargar video</a>
-            <p>Súbelo como Reel o TikTok 🔥 Ábrelo desde tu galería (o en iPhone desde Archivos &rarr; Descargas &rarr; Compartir &rarr; Guardar video) y etiqueta ${Config.HASHTAG}</p>
+            <p>Súbelo como Reel o TikTok 🔥 Ábrelo desde tu galería (o en iPhone desde Archivos &rarr; Descargas &rarr; Compartir &rarr; Guardar video) y etiqueta ${hashtag()}</p>
             </body></html>
         """.trimIndent()
         return newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", html)

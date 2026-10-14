@@ -17,6 +17,7 @@ import androidx.annotation.OptIn
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -36,6 +37,7 @@ class MainActivity : AppCompatActivity() {
     private var watcher: QuickShareWatcher? = null
     private var shownVideoId: String? = null
     private var shownLibraryVersion = -1
+    private var shownHotspot: HotspotInfo? = null
     private var tracks: List<MusicTrack> = emptyList()
     private lateinit var historyAdapter: HistoryAdapter
 
@@ -55,6 +57,19 @@ class MainActivity : AppCompatActivity() {
             setupMusicSpinner() // ya se pueden leer las canciones de INSUMOS
             refreshHistory()
             if (hasPermission(mediaPermissions.first())) startWatcher() else binding.autoSwitch.isChecked = false
+            if (app.useOwnNetwork) {
+                if (hasPermission(hotspotPermission)) app.startOwnNetwork() else binding.ownNetworkSwitch.isChecked = false
+            }
+        }
+
+    /** Permiso para crear la red Wi-Fi propia (Android 13+: dispositivos cercanos; antes: ubicación). */
+    private val hotspotPermission =
+        if (Build.VERSION.SDK_INT >= 33) Manifest.permission.NEARBY_WIFI_DEVICES
+        else Manifest.permission.ACCESS_FINE_LOCATION
+
+    private val hotspotPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) app.startOwnNetwork() else binding.ownNetworkSwitch.isChecked = false
         }
 
     private val pickVideo =
@@ -81,7 +96,18 @@ class MainActivity : AppCompatActivity() {
         binding.autoSwitch.setOnCheckedChangeListener { _, checked ->
             if (checked) ensurePermissionAndWatch() else stopWatcher()
         }
-        binding.hashtag.text = Config.HASHTAG
+        binding.hashtag.text = app.hashtag
+        binding.hashtagInput.setText(app.hashtag)
+        binding.hashtagInput.doAfterTextChanged { text ->
+            app.hashtag = text?.toString().orEmpty()
+            binding.hashtag.text = app.hashtag
+        }
+        binding.authorizeCheck.setOnCheckedChangeListener { _, checked -> app.setAuthorized(checked) }
+        binding.ownNetworkSwitch.isChecked = app.useOwnNetwork
+        binding.ownNetworkSwitch.setOnCheckedChangeListener { _, checked ->
+            app.useOwnNetwork = checked
+            if (checked) ensureOwnNetwork() else app.stopOwnNetwork()
+        }
         binding.doubleLogoSwitch.isChecked = app.overlayLayout == OverlayLayout.DOUBLE_TOP
         binding.doubleLogoSwitch.setOnCheckedChangeListener { _, checked ->
             app.overlayLayout = if (checked) OverlayLayout.DOUBLE_TOP else OverlayLayout.CLASSIC
@@ -101,6 +127,11 @@ class MainActivity : AppCompatActivity() {
         ensurePermissionAndWatch()
     }
 
+    private fun ensureOwnNetwork() {
+        if (hasPermission(hotspotPermission)) app.startOwnNetwork()
+        else hotspotPermissionLauncher.launch(hotspotPermission)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handleShareIntent(intent)
@@ -112,10 +143,18 @@ class MainActivity : AppCompatActivity() {
         app.refreshCounter()
         setupMusicSpinner() // por si se copiaron canciones nuevas
         updateDoubleLogoWarning()
-        val ip = NetworkUtils.localIpAddress()
-        binding.networkInfo.text =
-            if (ip != null) getString(R.string.network_ok, ip, Config.SERVER_PORT)
-            else getString(R.string.network_missing)
+        app.refreshCurrentUrl()
+        updateNetworkInfo(app.state.value)
+    }
+
+    private fun updateNetworkInfo(state: KioskState) {
+        val ip = NetworkUtils.localIpAddress(preferHotspot = state.hotspot != null)
+        binding.networkInfo.text = when {
+            state.hotspot != null -> getString(R.string.network_own, state.hotspot.ssid, ip ?: "…")
+            state.hotspotError != null -> state.hotspotError
+            ip != null -> getString(R.string.network_ok, ip, Config.SERVER_PORT)
+            else -> getString(R.string.network_missing)
+        }
     }
 
     override fun onDestroy() {
@@ -180,6 +219,24 @@ class MainActivity : AppCompatActivity() {
             binding.resultRow.visibility = View.VISIBLE
         }
 
+        // Casilla de autorización del video en pantalla (sin disparar el listener).
+        binding.authorizeCheck.visibility = if (current != null) View.VISIBLE else View.GONE
+        if (current != null && binding.authorizeCheck.isChecked != current.authorized) {
+            binding.authorizeCheck.setOnCheckedChangeListener(null)
+            binding.authorizeCheck.isChecked = current.authorized
+            binding.authorizeCheck.setOnCheckedChangeListener { _, checked -> app.setAuthorized(checked) }
+        }
+
+        // QR para conectarse a la red Wi-Fi del kiosko.
+        val hotspot = state.hotspot
+        if (hotspot != null && hotspot != shownHotspot) {
+            binding.wifiQr.setImageBitmap(QrCode.create(hotspot.wifiQrText(), 500))
+            binding.wifiText.text = getString(R.string.wifi_instructions, hotspot.ssid, hotspot.password)
+        }
+        shownHotspot = hotspot
+        binding.wifiRow.visibility = if (hotspot != null) View.VISIBLE else View.GONE
+        updateNetworkInfo(state)
+
         if (state.libraryVersion != shownLibraryVersion) {
             shownLibraryVersion = state.libraryVersion
             if (binding.historyPanel.visibility == View.VISIBLE) refreshHistory()
@@ -243,12 +300,15 @@ class MainActivity : AppCompatActivity() {
     private fun hasPermission(permission: String) =
         ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
+    /** Pide de una sola vez todos los permisos que falten (Android no admite dos solicitudes a la vez). */
     private fun ensurePermissionAndWatch() {
-        val missing = mediaPermissions.filterNot(::hasPermission)
+        val wanted = mediaPermissions.toList() + listOfNotNull(hotspotPermission.takeIf { app.useOwnNetwork })
+        val missing = wanted.filterNot(::hasPermission)
         if (missing.isNotEmpty()) {
             permissionLauncher.launch(missing.toTypedArray())
-        } else if (binding.autoSwitch.isChecked) {
-            startWatcher()
+        } else {
+            if (binding.autoSwitch.isChecked) startWatcher()
+            if (app.useOwnNetwork) app.startOwnNetwork()
         }
     }
 

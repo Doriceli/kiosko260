@@ -7,6 +7,13 @@
     <string name="auto_process">Editar automáticamente los videos que lleguen por Quick Share</string>
     <string name="double_logo">Logos arriba: hashtag.png + marco.png (1/9 de la pantalla). Apagado = diseño clásico</string>
     <string name="double_logo_missing">⚠️ No se encontró hashtag.png en Download &gt; INSUMOS: se usará el diseño clásico.</string>
+    <string name="authorize">Autorizo compartir mi video en redes sociales</string>
+    <string name="hashtag_label">Hashtag del video (abajo a la derecha)</string>
+    <string name="hashtag_hint">#etu2026 (vacío = sin hashtag)</string>
+    <string name="own_network">Crear red Wi-Fi propia del kiosko (no necesita internet)</string>
+    <string name="wifi_qr_description">QR para conectarse a la red Wi-Fi del kiosko</string>
+    <string name="wifi_instructions">1️⃣ Escanea este QR para conectarte a la red del kiosko\nRed: %1$s\nClave: %2$s\n2️⃣ Luego escanea el QR del video.\nSi no abre, apaga los datos móviles un momento.</string>
+    <string name="network_own">📶 Red del kiosko activa: %1$s (IP %2$s) — sin internet</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>
@@ -18,6 +25,6 @@
     <string name="history_count">%1$d videos en Download/PROCESADOS · toca uno para mostrar su QR</string>
     <string name="history_empty">Todavía no hay videos procesados.</string>
     <string name="network_ok">Servidor activo en http://%1$s:%2$d — los clientes deben estar en la misma red Wi-Fi.</string>
-    <string name="network_missing">⚠️ Sin Wi-Fi ni hotspot: conecta el kiosko a una red o activa el hotspot para que el QR funcione.</string>
+    <string name="network_missing">⚠️ Sin red: activa \"Crear red Wi-Fi propia del kiosko\" (no necesita internet) o conecta el kiosko a un Wi-Fi.</string>
     <string name="folders_info">Logo y canciones: Almacenamiento interno &gt; %1$s · Videos terminados: Download &gt; %2$s</string>
 </resources>

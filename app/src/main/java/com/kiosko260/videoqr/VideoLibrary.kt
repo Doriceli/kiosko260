@@ -8,7 +8,13 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /** Un video terminado que está en Download/PROCESADOS. */
-data class ProcessedVideo(val id: String, val file: File, val createdAt: LocalDateTime?, val number: Int?)
+data class ProcessedVideo(
+    val id: String,
+    val file: File,
+    val createdAt: LocalDateTime?,
+    val number: Int?,
+    val authorized: Boolean,
+)
 
 /**
  * Guarda los videos terminados en `Almacenamiento interno/Download/PROCESADOS/` y sus miniaturas
@@ -20,6 +26,9 @@ class VideoLibrary(private val context: Context) {
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
         Config.PROCESADOS_FOLDER,
     ).apply { mkdirs() }
+
+    /** Copias de los videos con autorización para redes: Download/PROCESADOS/AUTORIZADOS. */
+    val authorizedDir: File = File(videosDir, Config.AUTORIZADOS_FOLDER).apply { mkdirs() }
 
     val thumbnailsDir: File = File(context.getExternalFilesDir(null), "miniaturas").apply { mkdirs() }
 
@@ -44,6 +53,29 @@ class VideoLibrary(private val context: Context) {
         return target
     }
 
+    fun isAuthorized(id: String) = File(authorizedDir, "$id.mp4").isFile
+
+    /**
+     * Marca o desmarca "Autorizo compartir mi video en redes sociales": copia el video a
+     * AUTORIZADOS (o lo quita de ahí) y deja constancia en AUTORIZADOS/registro.csv.
+     */
+    fun setAuthorized(id: String, authorized: Boolean) {
+        val source = videoFile(id).takeIf { it.isFile } ?: return
+        val copy = File(authorizedDir, "$id.mp4")
+        if (authorized) {
+            if (!copy.isFile) source.copyTo(copy, overwrite = true)
+            MediaScannerConnection.scanFile(context, arrayOf(copy.absolutePath), arrayOf("video/mp4"), null)
+        } else {
+            copy.delete()
+            MediaScannerConnection.scanFile(context, arrayOf(copy.absolutePath), null, null)
+        }
+        runCatching {
+            val log = File(authorizedDir, "registro.csv")
+            if (!log.exists()) log.writeText("fecha_hora,video,autoriza\n")
+            log.appendText("${LocalDateTime.now().format(LOG_DATE)},$id.mp4,${if (authorized) "SI" else "NO"}\n")
+        }
+    }
+
     fun find(id: String): ProcessedVideo? = videoFile(id).takeIf { it.isFile }?.let(::toProcessed)
 
     /** Videos de PROCESADOS, del más nuevo al más viejo. */
@@ -58,11 +90,12 @@ class VideoLibrary(private val context: Context) {
         val id = file.nameWithoutExtension
         val createdAt = runCatching { LocalDateTime.parse(id.take(14), ID_DATE) }.getOrNull()
         val number = numbers.getInt(id, 0).takeIf { it > 0 }
-        return ProcessedVideo(id, file, createdAt, number)
+        return ProcessedVideo(id, file, createdAt, number, isAuthorized(id))
     }
 
     companion object {
         val ID_PATTERN = Regex("^[A-Za-z0-9]{6,32}$")
         private val ID_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
+        private val LOG_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     }
 }

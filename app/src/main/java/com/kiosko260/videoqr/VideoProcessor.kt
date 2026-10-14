@@ -53,7 +53,7 @@ import kotlin.math.roundToInt
  *  1. curva de velocidad ([SpeedEffect]: speed ramp, cámara lenta progresiva…),
  *  2. formato vertical 9:16 respetando la resolución original (los horizontales se recortan al centro),
  *  3. retoque de color opcional (desactivado por defecto),
- *  4. marco con degradado + sticker [Config.HASHTAG] + logo arriba a la izquierda,
+ *  4. logos + hashtag (editable en pantalla) abajo a la derecha,
  *  5. reemplaza el audio por una canción recortada a la duración exacta del video final.
  * El bitrate de salida es igual o mayor que el del original para no perder calidad.
  */
@@ -67,11 +67,12 @@ class VideoProcessor(private val context: Context) {
         music: MusicTrack?,
         speedEffect: SpeedEffect,
         layout: OverlayLayout,
+        hashtag: String,
         output: File,
         onProgress: (Int) -> Unit,
     ): File {
         val info = withContext(Dispatchers.IO) { probe(input) }
-        val overlay = withContext(Dispatchers.Default) { buildOverlay(info.outputWidth, info.outputHeight, layout) }
+        val overlay = withContext(Dispatchers.Default) { buildOverlay(info.outputWidth, info.outputHeight, layout, hashtag) }
         val speed = speedEffect.toSpeedProvider(info.durationUs)
 
         val videoEffects = mutableListOf<Effect>(
@@ -258,7 +259,7 @@ class VideoProcessor(private val context: Context) {
      * El logo queda debajo de las pestañas de TikTok/Reels; el sticker, pequeño en la esquina
      * inferior derecha ([Config.HASHTAG_SIZE]) para no tapar el video.
      */
-    private fun buildOverlay(width: Int, height: Int, layout: OverlayLayout): Bitmap {
+    private fun buildOverlay(width: Int, height: Int, layout: OverlayLayout, hashtag: String): Bitmap {
         val result = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(result)
         val unit = width / 100f // 1 % del ancho
@@ -279,11 +280,29 @@ class VideoProcessor(private val context: Context) {
         }
 
         if (layout == OverlayLayout.DOUBLE_TOP && drawTopBand(canvas, width, height)) {
-            drawPlainHashtag(canvas, width, height, unit, border)
+            drawPlainHashtag(canvas, width, height, unit, border, hashtag)
             return result
         }
 
-        // Sticker pequeño con el hashtag en la esquina inferior derecha, apenas girado y semitransparente.
+        if (hashtag.isNotBlank()) drawSticker(canvas, width, height, unit, border, hashtag)
+
+        // Logo (marco.png de INSUMOS) arriba a la izquierda, debajo de las pestañas de TikTok/Reels.
+        customization.loadLogo()?.let { logo ->
+            val left = (7f * unit).roundToInt()
+            val top = (height * 0.08f).roundToInt()
+            val logoWidth = (width * Config.LOGO_WIDTH_FRACTION).roundToInt()
+            val logoHeight = (logoWidth.toFloat() * logo.height / logo.width).roundToInt()
+            canvas.drawBitmap(
+                logo, null, Rect(left, top, left + logoWidth, top + logoHeight),
+                Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG),
+            )
+            logo.recycle()
+        }
+        return result
+    }
+
+    /** Sticker pequeño de colores con el hashtag en la esquina inferior derecha (diseño clásico). */
+    private fun drawSticker(canvas: Canvas, width: Int, height: Int, unit: Float, border: Float, hashtag: String) {
         val size = Config.HASHTAG_SIZE * unit
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
@@ -292,7 +311,7 @@ class VideoProcessor(private val context: Context) {
             textAlign = Paint.Align.CENTER
             setShadowLayer(0.3f * unit, 0f, 0.2f * unit, Config.CORAL)
         }
-        val textWidth = textPaint.measureText(Config.HASHTAG)
+        val textWidth = textPaint.measureText(hashtag)
         val pillWidth = textWidth + 1.2f * size
         val pillHeight = 1.6f * size
         val margin = border + 3.5f * unit
@@ -314,29 +333,16 @@ class VideoProcessor(private val context: Context) {
             color = Color.WHITE
         })
         val baseline = centerY - (textPaint.descent() + textPaint.ascent()) / 2
-        canvas.drawText(Config.HASHTAG, centerX, baseline, textPaint)
+        canvas.drawText(hashtag, centerX, baseline, textPaint)
         canvas.restore()
-
-        // Logo (marco.png de INSUMOS) arriba a la izquierda, debajo de las pestañas de TikTok/Reels.
-        customization.loadLogo()?.let { logo ->
-            val left = (7f * unit).roundToInt()
-            val top = (height * 0.08f).roundToInt()
-            val logoWidth = (width * Config.LOGO_WIDTH_FRACTION).roundToInt()
-            val logoHeight = (logoWidth.toFloat() * logo.height / logo.width).roundToInt()
-            canvas.drawBitmap(
-                logo, null, Rect(left, top, left + logoWidth, top + logoHeight),
-                Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG),
-            )
-            logo.recycle()
-        }
-        return result
     }
 
     /**
      * Hashtag en letras blancas sin fondo, abajo a la derecha (diseño "doble logo").
      * Lleva una sombra suave para que se lea también sobre fondos claros.
      */
-    private fun drawPlainHashtag(canvas: Canvas, width: Int, height: Int, unit: Float, border: Float) {
+    private fun drawPlainHashtag(canvas: Canvas, width: Int, height: Int, unit: Float, border: Float, hashtag: String) {
+        if (hashtag.isBlank()) return
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
@@ -345,7 +351,7 @@ class VideoProcessor(private val context: Context) {
             setShadowLayer(0.5f * unit, 0f, 0.2f * unit, Color.argb(140, 0, 0, 0))
         }
         val margin = border + 3.5f * unit
-        canvas.drawText(Config.HASHTAG, width - margin, height - margin - paint.descent(), paint)
+        canvas.drawText(hashtag, width - margin, height - margin - paint.descent(), paint)
     }
 
     /**

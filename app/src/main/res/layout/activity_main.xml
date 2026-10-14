@@ -165,6 +165,52 @@
                     </LinearLayout>
                 </LinearLayout>
 
+                <CheckBox
+                    android:id="@+id/authorizeCheck"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_card"
+                    android:buttonTint="@color/blanco"
+                    android:minHeight="56dp"
+                    android:padding="10dp"
+                    android:text="@string/authorize"
+                    android:textColor="@color/blanco"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <!-- QR para conectarse a la red Wi-Fi del kiosko (sin internet) -->
+                <LinearLayout
+                    android:id="@+id/wifiRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="10dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/wifiQr"
+                        android:layout_width="130dp"
+                        android:layout_height="130dp"
+                        android:background="@drawable/bg_qr"
+                        android:contentDescription="@string/wifi_qr_description"
+                        android:padding="6dp"
+                        android:scaleType="fitCenter" />
+
+                    <TextView
+                        android:id="@+id/wifiText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:textColor="@color/blanco"
+                        android:textSize="15sp" />
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/url"
                     android:layout_width="wrap_content"
@@ -181,6 +227,39 @@
                     android:layout_marginTop="24dp"
                     android:checked="true"
                     android:text="@string/auto_process"
+                    android:textColor="@color/blanco"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/hashtag_label"
+                    android:textColor="@color/blanco"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/hashtagInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_card"
+                    android:hint="@string/hashtag_hint"
+                    android:importantForAutofill="no"
+                    android:inputType="text"
+                    android:maxLength="40"
+                    android:minHeight="48dp"
+                    android:paddingStart="14dp"
+                    android:paddingEnd="14dp"
+                    android:textColor="@color/blanco"
+                    android:textColorHint="@color/blanco_suave"
+                    android:textStyle="bold" />
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/ownNetworkSwitch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/own_network"
                     android:textColor="@color/blanco"
                     android:textStyle="bold" />
 

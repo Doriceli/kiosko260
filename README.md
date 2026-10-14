@@ -99,6 +99,30 @@ Las curvas están en `SpeedEffect.kt` (puntos `posición → velocidad`) y se pu
 Si no se encuentra nada en INSUMOS, la app también busca en
 `Android/data/com.kiosko260.videoqr/files/personalizacion/` (`marco.png`, `music/*.mp3`) y, por último, en los assets del APK.
 
+## Funciona 100 % sin internet
+
+- **El QR se genera dentro del celular** con la librería ZXing; no se consulta ningún servicio en línea.
+- **Red propia del kiosko:** con el interruptor **"Crear red Wi-Fi propia del kiosko"** (encendido por defecto) la app crea una red Wi-Fi **sin internet** (LocalOnlyHotspot de Android). No hace falta router, Wi-Fi del lugar ni datos móviles.
+- Junto al QR del video aparece un **QR de Wi-Fi** con el nombre y la clave de esa red. El invitado:
+  1. escanea el **QR de Wi-Fi** con la cámara y se conecta a la red del kiosko;
+  2. escanea el **QR del video** y lo descarga.
+- Si al invitado no le abre la página, que **apague los datos móviles un momento**: algunos Android mandan todo por datos cuando el Wi-Fi no tiene internet.
+- La app pide el permiso de **Dispositivos cercanos** (Android 13+) o de **Ubicación** (Android 10-12) para crear la red; en Android 10-12 la ubicación del celular debe estar activada. Si falla, apaga el hotspot normal del celular y vuelve a intentarlo.
+- Android elige el nombre y la clave de la red, y pueden cambiar cada vez que se crea; por eso la app siempre muestra el QR de Wi-Fi actualizado.
+
+## Autorización para redes sociales
+
+- Debajo del QR aparece la casilla **"Autorizo compartir mi video en redes sociales"**. La marca el invitado (o tú, con su permiso) después de ver su video.
+- Al marcarla, se guarda una copia del video en **Download > PROCESADOS > AUTORIZADOS**. Si se desmarca, la copia se borra.
+- Cada cambio queda registrado en **AUTORIZADOS/registro.csv** (fecha y hora, video, SI/NO), que puedes abrir en Excel.
+- En la pestaña **Procesados** los videos autorizados muestran ✅. Al tocar uno se vuelve a mostrar su QR y su casilla, por si hay que corregirla.
+
+## Hashtag editable
+
+- En la pestaña **En vivo** hay un campo **"Hashtag del video"**. Lo que escribas ahí es lo que aparece abajo a la derecha en los **siguientes** videos (en los dos diseños) y en la página de descarga.
+- Se recuerda aunque cierres la app. Si lo dejas vacío, el video sale sin hashtag.
+- El valor inicial es `HASHTAG` de `Config.kt` (`#etu2026`).
+
 ## 4. Preparar el kiosko el día del evento
 
 1. **Quick Share**: en el kiosko, Ajustes → Google → Dispositivos y uso compartido → Quick Share (o en Samsung: panel rápido → Quick Share) → "Quién puede compartir contigo" = **Todos** (o "Todos durante 10 minutos").

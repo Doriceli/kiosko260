@@ -7,7 +7,7 @@ object Config {
     /** Borde de colores alrededor del video. false = video a pantalla completa, sin margen. */
     const val SHOW_BORDER = false
 
-    /** Texto del sticker (esquina inferior derecha). */
+    /** Hashtag por defecto de la esquina inferior derecha (se puede editar en pantalla antes de cada video). */
     const val HASHTAG = "#etu2026"
 
     /** Tamaño de letra del sticker, en % del ancho del video (antes 8; 4 = discreto). */
@@ -62,6 +62,9 @@ object Config {
 
     /** Carpeta donde se guardan los videos terminados (Almacenamiento interno > Download > PROCESADOS). */
     const val PROCESADOS_FOLDER = "PROCESADOS"
+
+    /** Subcarpeta con los videos que el invitado autorizó compartir en redes: Download/PROCESADOS/AUTORIZADOS. */
+    const val AUTORIZADOS_FOLDER = "AUTORIZADOS"
 
     /** Ancho del logo como fracción del ancho del video. */
     const val LOGO_WIDTH_FRACTION = 0.30f
