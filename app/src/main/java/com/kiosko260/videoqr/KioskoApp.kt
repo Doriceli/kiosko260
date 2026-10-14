@@ -6,6 +6,8 @@ import android.util.Log
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -16,6 +18,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 /** El video cuyo QR se muestra en pantalla. */
 data class SharedVideo(
@@ -39,6 +42,8 @@ data class KioskState(
     /** Red Wi-Fi propia del kiosko (sin internet), si está activa. */
     val hotspot: HotspotInfo? = null,
     val hotspotError: String? = null,
+    /** Hora (System.currentTimeMillis) en que la red se apagará sola para volver a Quick Share. */
+    val hotspotOffAt: Long? = null,
 )
 
 /**
@@ -90,10 +95,10 @@ class KioskoApp : Application() {
         counter = DailyCounter(this)
         processor = VideoProcessor(this)
         hotspot = KioskHotspot(this) { info, error ->
-            _state.update { it.copy(hotspot = info, hotspotError = error) }
+            _state.update { it.copy(hotspot = info, hotspotError = error, hotspotOffAt = it.hotspotOffAt.takeIf { info != null }) }
             // La IP de la red nueva tarda un instante en estar lista: se recalcula el QR.
             scope.launch {
-                kotlinx.coroutines.delay(1_500)
+                delay(1_500)
                 refreshCurrentUrl()
             }
         }
@@ -114,7 +119,12 @@ class KioskoApp : Application() {
 
     fun startServer() {
         if (server?.isAlive == true) return
-        server = VideoServer(library, Config.SERVER_PORT) { hashtag }.also {
+        server = VideoServer(
+            library,
+            Config.SERVER_PORT,
+            hashtag = { hashtag },
+            onDownloaded = { scope.launch { onVideoDownloaded() } },
+        ).also {
             runCatching { it.start() }.onFailure { e -> Log.e(TAG, "No se pudo iniciar el servidor", e) }
         }
     }
@@ -127,6 +137,47 @@ class KioskoApp : Application() {
     fun startOwnNetwork() = hotspot.start()
 
     fun stopOwnNetwork() = hotspot.stop()
+
+    private var autoOffJob: Job? = null
+
+    /**
+     * MODO COMPARTIR: enciende la red del kiosko para que los invitados escaneen el QR.
+     * Con [autoOff] se apaga sola pasado el tiempo de [Config.SHARE_WINDOW_MINUTES].
+     */
+    fun shareMode(autoOff: Boolean = true) {
+        if (!useOwnNetwork) return
+        startOwnNetwork()
+        if (autoOff) scheduleAutoOff(TimeUnit.MINUTES.toMillis(Config.SHARE_WINDOW_MINUTES)) else cancelAutoOff()
+    }
+
+    /** MODO RECIBIR: apaga la red del kiosko para que Quick Share pueda usar el Wi-Fi. */
+    fun receiveMode() {
+        cancelAutoOff()
+        stopOwnNetwork()
+    }
+
+    private fun scheduleAutoOff(delayMs: Long) {
+        autoOffJob?.cancel()
+        _state.update { it.copy(hotspotOffAt = System.currentTimeMillis() + delayMs) }
+        autoOffJob = scope.launch {
+            delay(delayMs)
+            // No apagar si se está editando otro video (su QR se mostrará al terminar).
+            if (_state.value.progress == null) receiveMode()
+        }
+    }
+
+    private fun cancelAutoOff() {
+        autoOffJob?.cancel()
+        autoOffJob = null
+        _state.update { it.copy(hotspotOffAt = null) }
+    }
+
+    /** El invitado ya descargó su video: en unos segundos se vuelve al modo Quick Share. */
+    private fun onVideoDownloaded() {
+        if (hotspot.isActive && _state.value.progress == null) {
+            scheduleAutoOff(TimeUnit.SECONDS.toMillis(Config.AFTER_DOWNLOAD_SECONDS))
+        }
+    }
 
     /** Recalcula el QR del video en pantalla (p. ej. al cambiar de red). */
     fun refreshCurrentUrl() {
@@ -149,6 +200,7 @@ class KioskoApp : Application() {
 
     /** Vuelve a mostrar el QR de un video de la pestaña "Procesados". */
     fun showExisting(video: ProcessedVideo) {
+        shareMode()
         scope.launch {
             val thumbnail = withContext(Dispatchers.IO) { thumbnailFor(video.id) }
             val url = shareUrl(video.id)
@@ -191,6 +243,8 @@ class KioskoApp : Application() {
             _state.update {
                 it.copy(status = "Editando video" + (track?.let { t -> " con «${t.title}»" } ?: "") + "…", progress = 0)
             }
+            // El video ya llegó por Quick Share: se enciende la red para tener el QR listo al terminar.
+            shareMode(autoOff = false)
             try {
                 val exported = processor.process(uri, track, effect, layout, tag, File(cacheDir, "$id.mp4")) { p ->
                     _state.update { it.copy(progress = p) }
@@ -217,6 +271,10 @@ class KioskoApp : Application() {
                 _state.update { it.copy(status = "Error al editar el video: ${e.message}", progress = null) }
             } finally {
                 _state.update { it.copy(pending = (it.pending - 1).coerceAtLeast(0)) }
+                // Con más videos en cola la red sigue encendida; si no, empieza la cuenta para apagarla.
+                if (_state.value.pending == 0 && hotspot.isActive) {
+                    scheduleAutoOff(TimeUnit.MINUTES.toMillis(Config.SHARE_WINDOW_MINUTES))
+                }
             }
         }
     }

@@ -5,6 +5,8 @@ import fi.iki.elonen.NanoHTTPD.IHTTPSession
 import fi.iki.elonen.NanoHTTPD.Response
 import java.io.File
 import java.io.FileInputStream
+import java.io.FilterInputStream
+import java.io.InputStream
 
 /**
  * Servidor HTTP dentro del celular del kiosko.
@@ -17,6 +19,8 @@ class VideoServer(
     private val library: VideoLibrary,
     port: Int,
     private val hashtag: () -> String,
+    /** Se llama (en el hilo del servidor) cuando un invitado terminó de descargar un video. */
+    private val onDownloaded: (String) -> Unit = {},
 ) : NanoHTTPD(port) {
 
     override fun serve(session: IHTTPSession): Response {
@@ -86,12 +90,12 @@ class VideoServer(
                 return newFixedLengthResponse(Response.Status.RANGE_NOT_SATISFIABLE, MIME_PLAINTEXT, "")
                     .apply { addHeader("Content-Range", "bytes */$total") }
             }
-            val input = FileInputStream(file).apply { skip(start) }
+            val input = watchDownload(FileInputStream(file).apply { skip(start) }, end - start + 1, id, session, end == total - 1)
             newFixedLengthResponse(Response.Status.PARTIAL_CONTENT, MIME_MP4, input, end - start + 1).apply {
                 addHeader("Content-Range", "bytes $start-$end/$total")
             }
         } else {
-            newFixedLengthResponse(Response.Status.OK, MIME_MP4, FileInputStream(file), total)
+            newFixedLengthResponse(Response.Status.OK, MIME_MP4, watchDownload(FileInputStream(file), total, id, session, true), total)
         }
 
         response.addHeader("Accept-Ranges", "bytes")
@@ -105,6 +109,30 @@ class VideoServer(
         if (!VideoLibrary.ID_PATTERN.matches(id)) return notFound()
         val file = library.thumbnailFile(id).takeIf { it.isFile } ?: return notFound()
         return newFixedLengthResponse(Response.Status.OK, "image/jpeg", FileInputStream(file), file.length())
+    }
+
+    /**
+     * Para las descargas (?dl=1) que llegan hasta el final del archivo, avisa cuando se enviaron
+     * todos los bytes. Así la app sabe que el invitado ya tiene su video y puede apagar la red.
+     */
+    private fun watchDownload(input: InputStream, length: Long, id: String, session: IHTTPSession, reachesEnd: Boolean): InputStream {
+        if (!reachesEnd || !session.parameters.containsKey("dl")) return input
+        return object : FilterInputStream(input) {
+            private var sent = 0L
+            private var notified = false
+
+            private fun count(n: Int): Int {
+                if (n > 0) sent += n
+                if (!notified && sent >= length) {
+                    notified = true
+                    runCatching { onDownloaded(id) }
+                }
+                return n
+            }
+
+            override fun read(): Int = super.read().also { if (it >= 0) count(1) }
+            override fun read(b: ByteArray, off: Int, len: Int): Int = count(super.read(b, off, len))
+        }
     }
 
     private fun notFound(): Response =

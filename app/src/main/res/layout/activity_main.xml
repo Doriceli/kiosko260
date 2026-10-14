@@ -94,6 +94,48 @@
                     android:progressTint="@color/blanco"
                     android:visibility="gone" />
 
+                <!-- Modo de red: recibir por Quick Share / compartir QR -->
+                <TextView
+                    android:id="@+id/modeText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_pill"
+                    android:gravity="center"
+                    android:padding="10dp"
+                    android:textColor="@color/rojo"
+                    android:textSize="16sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/receiveButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="6dp"
+                        android:layout_weight="1"
+                        android:backgroundTint="@color/blanco"
+                        android:text="@string/receive_button"
+                        android:textColor="@color/rojo"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/shareButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="6dp"
+                        android:layout_weight="1"
+                        android:backgroundTint="@color/blanco"
+                        android:text="@string/share_button"
+                        android:textColor="@color/rojo"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
                 <!-- Vista previa del video a un lado del QR -->
                 <LinearLayout
                     android:id="@+id/resultRow"

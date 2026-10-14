@@ -87,6 +87,17 @@ object Config {
      */
     const val QUICK_SHARE_FOLDER_LIKE = "%Quick Share%"
 
+    /**
+     * Cambio automático entre Quick Share y la red del kiosko (no pueden funcionar a la vez porque
+     * los dos usan la antena Wi-Fi):
+     *  - Mientras se espera un video, la red está APAGADA → Quick Share funciona normal.
+     *  - Al empezar a editar un video se ENCIENDE la red para que el QR esté listo al terminar.
+     *  - Se vuelve a apagar [AFTER_DOWNLOAD_SECONDS] después de que el invitado descarga su video,
+     *    o a los [SHARE_WINDOW_MINUTES] minutos si nadie lo descarga.
+     */
+    const val SHARE_WINDOW_MINUTES = 4L
+    const val AFTER_DOWNLOAD_SECONDS = 20L
+
     /** Puerto del servidor local de descargas. */
     const val SERVER_PORT = 8080
 

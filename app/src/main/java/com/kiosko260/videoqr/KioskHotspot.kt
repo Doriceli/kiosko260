@@ -44,7 +44,7 @@ class KioskHotspot(context: Context, private val onChange: (HotspotInfo?, String
                 override fun onStopped() {
                     starting = false
                     reservation = null
-                    onChange(null, "La red del kiosko se detuvo")
+                    onChange(null, null) // p. ej. Android la apagó para que Quick Share use el Wi-Fi
                 }
 
                 override fun onFailed(reason: Int) {

@@ -26,6 +26,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import com.google.android.material.tabs.TabLayout
 import com.kiosko260.videoqr.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -57,9 +58,7 @@ class MainActivity : AppCompatActivity() {
             setupMusicSpinner() // ya se pueden leer las canciones de INSUMOS
             refreshHistory()
             if (hasPermission(mediaPermissions.first())) startWatcher() else binding.autoSwitch.isChecked = false
-            if (app.useOwnNetwork) {
-                if (hasPermission(hotspotPermission)) app.startOwnNetwork() else binding.ownNetworkSwitch.isChecked = false
-            }
+            if (app.useOwnNetwork && !hasPermission(hotspotPermission)) binding.ownNetworkSwitch.isChecked = false
         }
 
     /** Permiso para crear la red Wi-Fi propia (Android 13+: dispositivos cercanos; antes: ubicación). */
@@ -69,7 +68,7 @@ class MainActivity : AppCompatActivity() {
 
     private val hotspotPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (granted) app.startOwnNetwork() else binding.ownNetworkSwitch.isChecked = false
+            if (!granted) binding.ownNetworkSwitch.isChecked = false
         }
 
     private val pickVideo =
@@ -106,8 +105,10 @@ class MainActivity : AppCompatActivity() {
         binding.ownNetworkSwitch.isChecked = app.useOwnNetwork
         binding.ownNetworkSwitch.setOnCheckedChangeListener { _, checked ->
             app.useOwnNetwork = checked
-            if (checked) ensureOwnNetwork() else app.stopOwnNetwork()
+            if (checked) ensureOwnNetwork() else app.receiveMode()
         }
+        binding.receiveButton.setOnClickListener { app.receiveMode() }
+        binding.shareButton.setOnClickListener { app.shareMode() }
         binding.doubleLogoSwitch.isChecked = app.overlayLayout == OverlayLayout.DOUBLE_TOP
         binding.doubleLogoSwitch.setOnCheckedChangeListener { _, checked ->
             app.overlayLayout = if (checked) OverlayLayout.DOUBLE_TOP else OverlayLayout.CLASSIC
@@ -122,14 +123,23 @@ class MainActivity : AppCompatActivity() {
                 app.state.collect(::render)
             }
         }
+        // Cuenta regresiva del modo compartir.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                while (true) {
+                    updateModeText(app.state.value)
+                    delay(1_000)
+                }
+            }
+        }
 
         handleShareIntent(intent)
         ensurePermissionAndWatch()
     }
 
+    /** Solo pide el permiso: la red se enciende sola cuando llega un video (o con "Mostrar QR"). */
     private fun ensureOwnNetwork() {
-        if (hasPermission(hotspotPermission)) app.startOwnNetwork()
-        else hotspotPermissionLauncher.launch(hotspotPermission)
+        if (!hasPermission(hotspotPermission)) hotspotPermissionLauncher.launch(hotspotPermission)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -145,6 +155,27 @@ class MainActivity : AppCompatActivity() {
         updateDoubleLogoWarning()
         app.refreshCurrentUrl()
         updateNetworkInfo(app.state.value)
+    }
+
+    /** "Recibiendo por Quick Share" o "Compartiendo QR (se apaga en m:ss)". */
+    private fun updateModeText(state: KioskState) {
+        if (!app.useOwnNetwork) {
+            binding.modeText.text = getString(R.string.mode_external)
+            binding.receiveButton.isEnabled = false
+            binding.shareButton.isEnabled = false
+            return
+        }
+        val offAt = state.hotspotOffAt
+        binding.modeText.text = when {
+            state.hotspot == null -> getString(R.string.mode_receive)
+            offAt == null -> getString(R.string.mode_share)
+            else -> {
+                val seconds = ((offAt - System.currentTimeMillis()) / 1000).coerceAtLeast(0)
+                getString(R.string.mode_share_countdown, seconds / 60, seconds % 60)
+            }
+        }
+        binding.receiveButton.isEnabled = state.hotspot != null
+        binding.shareButton.isEnabled = state.hotspot == null
     }
 
     private fun updateNetworkInfo(state: KioskState) {
@@ -236,6 +267,7 @@ class MainActivity : AppCompatActivity() {
         shownHotspot = hotspot
         binding.wifiRow.visibility = if (hotspot != null) View.VISIBLE else View.GONE
         updateNetworkInfo(state)
+        updateModeText(state)
 
         if (state.libraryVersion != shownLibraryVersion) {
             shownLibraryVersion = state.libraryVersion
@@ -308,7 +340,6 @@ class MainActivity : AppCompatActivity() {
             permissionLauncher.launch(missing.toTypedArray())
         } else {
             if (binding.autoSwitch.isChecked) startWatcher()
-            if (app.useOwnNetwork) app.startOwnNetwork()
         }
     }
 

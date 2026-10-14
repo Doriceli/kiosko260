@@ -10,10 +10,16 @@
     <string name="authorize">Autorizo compartir mi video en redes sociales</string>
     <string name="hashtag_label">Hashtag del video (abajo a la derecha)</string>
     <string name="hashtag_hint">#etu2026 (vacío = sin hashtag)</string>
-    <string name="own_network">Crear red Wi-Fi propia del kiosko (no necesita internet)</string>
+    <string name="own_network">Red Wi-Fi propia del kiosko, automática (se apaga para Quick Share)</string>
     <string name="wifi_qr_description">QR para conectarse a la red Wi-Fi del kiosko</string>
     <string name="wifi_instructions">1️⃣ Escanea este QR para conectarte a la red del kiosko\nRed: %1$s\nClave: %2$s\n2️⃣ Luego escanea el QR del video.\nSi no abre, apaga los datos móviles un momento.</string>
     <string name="network_own">📶 Red del kiosko activa: %1$s (IP %2$s) — sin internet</string>
+    <string name="mode_receive">📥 Listo para recibir por Quick Share (red del kiosko apagada)</string>
+    <string name="mode_share">📶 Red del kiosko encendida: escanea el QR</string>
+    <string name="mode_share_countdown">📶 Red del kiosko encendida · vuelve a Quick Share en %1$d:%2$02d</string>
+    <string name="mode_external">🌐 Usando un Wi-Fi externo (Quick Share y QR funcionan a la vez)</string>
+    <string name="receive_button">📥 Recibir (Quick Share)</string>
+    <string name="share_button">📶 Mostrar QR</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>

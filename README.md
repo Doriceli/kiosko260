@@ -110,6 +110,25 @@ Si no se encuentra nada en INSUMOS, la app también busca en
 - La app pide el permiso de **Dispositivos cercanos** (Android 13+) o de **Ubicación** (Android 10-12) para crear la red; en Android 10-12 la ubicación del celular debe estar activada. Si falla, apaga el hotspot normal del celular y vuelve a intentarlo.
 - Android elige el nombre y la clave de la red, y pueden cambiar cada vez que se crea; por eso la app siempre muestra el QR de Wi-Fi actualizado.
 
+## Quick Share y la red del kiosko (cambio automático)
+
+Quick Share y el hotspot **no pueden funcionar al mismo tiempo**: los dos usan la antena Wi-Fi (Quick Share la usa con Wi-Fi Direct para transferir rápido). Por eso Android pregunta *"¿Desactivar hotspot para usar Quick Share?"*. La app ahora cambia sola entre los dos modos:
+
+| Momento | Red del kiosko | Quick Share |
+|---|---|---|
+| Esperando un video | **Apagada** | ✅ Funciona normal |
+| Llega el video y empieza la edición | Se **enciende** (el QR queda listo al terminar) | — |
+| El invitado descarga su video | Se apaga **20 s después** | ✅ Listo para el siguiente |
+| Nadie lo descarga | Se apaga a los **4 min** | ✅ |
+
+- En pantalla se ve el modo actual y la cuenta regresiva: *"📶 Red del kiosko encendida · vuelve a Quick Share en 3:12"*.
+- Botones manuales: **📥 Recibir (Quick Share)** apaga la red al instante; **📶 Mostrar QR** la vuelve a encender (también al tocar un video en *Procesados*).
+- Si Android te muestra el aviso de desactivar el hotspot, puedes aceptarlo sin problema: la app lo detecta y vuelve a encender la red cuando llegue el video.
+- Los tiempos se ajustan en `Config.kt`: `SHARE_WINDOW_MINUTES` y `AFTER_DOWNLOAD_SECONDS`.
+- Cada vez que se enciende la red, Android puede cambiar su nombre y clave. No pasa nada: el QR de Wi-Fi en pantalla siempre está actualizado.
+
+> 💡 **La opción más cómoda para eventos largos:** un mini router Wi-Fi (no necesita internet) con el kiosko conectado a él. Apaga el interruptor "Red Wi-Fi propia" y así Quick Share y la descarga por QR funcionan **a la vez**, sin cambios de modo, y los invitados no tienen que reconectarse cada vez.
+
 ## Autorización para redes sociales
 
 - Debajo del QR aparece la casilla **"Autorizo compartir mi video en redes sociales"**. La marca el invitado (o tú, con su permiso) después de ver su video.
