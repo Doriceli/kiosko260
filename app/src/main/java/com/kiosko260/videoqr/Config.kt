@@ -35,6 +35,15 @@ object Config {
     const val MAX_VIDEO_BITRATE = 100_000_000
 
     /**
+     * Tamaño máximo del video final, para que se transfiera rápido. La app baja el bitrate solo
+     * lo necesario para no pasarse (un video de ~20 s queda en ~13 Mbps, que se ve muy bien en 1080p).
+     */
+    const val MAX_OUTPUT_MB = 35
+
+    /** Nunca bajar de este bitrate (aunque el video sea muy largo y pase del límite). */
+    const val MIN_VIDEO_BITRATE = 4_000_000
+
+    /**
      * En los tramos acelerados del speed ramp un video de 60 fps llegaría a ~100 fps, algo que
      * muchos codificadores y redes no aceptan. Se limita a este valor (no afecta la cámara lenta).
      */
@@ -96,6 +105,12 @@ object Config {
      *    o a los [SHARE_WINDOW_MINUTES] minutos si nadie lo descarga.
      */
     const val SHARE_WINDOW_MINUTES = 4L
+
+    /**
+     * Con "Acceso a notificaciones" activado, pulsar "Aceptar" en las solicitudes de Quick Share.
+     * Lo más fiable es configurar Quick Share para aceptar solo de tus dispositivos (ver README).
+     */
+    const val AUTO_ACCEPT_QUICK_SHARE = true
     const val AFTER_DOWNLOAD_SECONDS = 20L
 
     /** Puerto del servidor local de descargas. */

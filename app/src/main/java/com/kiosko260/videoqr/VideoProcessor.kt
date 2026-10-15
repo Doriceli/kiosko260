@@ -55,12 +55,19 @@ import kotlin.math.roundToInt
  *  3. retoque de color opcional (desactivado por defecto),
  *  4. logos + hashtag (editable en pantalla) abajo a la derecha,
  *  5. reemplaza el audio por una canción recortada a la duración exacta del video final.
- * El bitrate de salida es igual o mayor que el del original para no perder calidad.
+ * El bitrate busca la calidad del original, pero sin pasar de [Config.MAX_OUTPUT_MB] por archivo.
  */
 @OptIn(UnstableApi::class)
 class VideoProcessor(private val context: Context) {
 
     private val customization = Customization(context)
+
+    private companion object {
+        /** Margen para que el archivo quede por debajo del límite aunque el codificador se pase un poco. */
+        const val SIZE_SAFETY = 0.9
+        /** Bitrate de audio AAC que usa Media3 por defecto (128 kbps). */
+        const val AUDIO_BITRATE = 128 * 1024
+    }
 
     suspend fun process(
         input: Uri,
@@ -75,37 +82,62 @@ class VideoProcessor(private val context: Context) {
         val overlay = withContext(Dispatchers.Default) { buildOverlay(info.outputWidth, info.outputHeight, layout, hashtag) }
         val speed = speedEffect.toSpeedProvider(info.durationUs)
 
-        val videoEffects = mutableListOf<Effect>(
-            SpeedChangeEffect(speed),
-            FrameDropEffect.createDefaultFrameDropEffect(Config.MAX_FRAME_RATE),
-            Presentation.createForWidthAndHeight(
-                info.outputWidth, info.outputHeight, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP,
-            ),
-        )
-        if (Config.CONTRAST != 0f) videoEffects += Contrast(Config.CONTRAST)
-        if (Config.SATURATION != 0f) videoEffects += HslAdjustment.Builder().adjustSaturation(Config.SATURATION).build()
-        videoEffects += OverlayEffect(listOf<TextureOverlay>(BitmapOverlay.createStaticBitmapOverlay(overlay)))
+        val finalDurationUs = speed.outputDurationUs(info.durationUs)
+        val songItems = if (music != null) {
+            withContext(Dispatchers.IO) { musicItems(music, finalDurationUs / 1000) }
+        } else emptyList()
 
-        val video = EditedMediaItem.Builder(MediaItem.fromUri(input))
-            // El audio original con cambios de velocidad suena mal: se sustituye por la canción.
-            .setRemoveAudio(true)
-            .setEffects(Effects(emptyList(), videoEffects))
-            .build()
+        fun composition(): Composition {
+            val videoEffects = mutableListOf<Effect>(
+                SpeedChangeEffect(speed),
+                FrameDropEffect.createDefaultFrameDropEffect(Config.MAX_FRAME_RATE),
+                Presentation.createForWidthAndHeight(
+                    info.outputWidth, info.outputHeight, Presentation.LAYOUT_SCALE_TO_FIT_WITH_CROP,
+                ),
+            )
+            if (Config.CONTRAST != 0f) videoEffects += Contrast(Config.CONTRAST)
+            if (Config.SATURATION != 0f) videoEffects += HslAdjustment.Builder().adjustSaturation(Config.SATURATION).build()
+            videoEffects += OverlayEffect(listOf<TextureOverlay>(BitmapOverlay.createStaticBitmapOverlay(overlay)))
 
-        val sequences = mutableListOf(EditedMediaItemSequence.Builder(listOf(video)).build())
-        if (music != null) {
-            val finalDurationMs = speed.outputDurationUs(info.durationUs) / 1000
-            val songItems = withContext(Dispatchers.IO) { musicItems(music, finalDurationMs) }
+            val video = EditedMediaItem.Builder(MediaItem.fromUri(input))
+                // El audio original con cambios de velocidad suena mal: se sustituye por la canción.
+                .setRemoveAudio(true)
+                .setEffects(Effects(emptyList(), videoEffects))
+                .build()
+
+            val sequences = mutableListOf(EditedMediaItemSequence.Builder(listOf(video)).build())
             if (songItems.isNotEmpty()) sequences += EditedMediaItemSequence.Builder(songItems).build()
+            return Composition.Builder(sequences)
+                // Los videos HDR (muy comunes en Samsung/iPhone) se convierten a SDR con buen mapeo de
+                // tonos; si no, se verían lavados en WhatsApp, Instagram y en la mayoría de celulares.
+                .setHdrMode(Composition.HDR_MODE_TONE_MAP_HDR_TO_SDR_USING_OPEN_GL)
+                .build()
         }
-        val composition = Composition.Builder(sequences)
-            // Los videos HDR (muy comunes en Samsung/iPhone) se convierten a SDR con buen mapeo de
-            // tonos; si no, se verían lavados en WhatsApp, Instagram y en la mayoría de celulares.
-            .setHdrMode(Composition.HDR_MODE_TONE_MAP_HDR_TO_SDR_USING_OPEN_GL)
-            .build()
 
         output.parentFile?.mkdirs()
-        return withContext(Dispatchers.Main) { export(composition, info.bitrate, output, onProgress) }
+        val maxBytes = Config.MAX_OUTPUT_MB * 1024L * 1024L
+        var bitrate = bitrateForSize(info.bitrate, finalDurationUs, maxBytes)
+        var result = withContext(Dispatchers.Main) { export(composition(), bitrate, output, onProgress) }
+
+        // Los codificadores no siempre clavan el bitrate pedido: si se pasó del límite, se repite
+        // una vez con un bitrate proporcionalmente menor.
+        val size = result.length()
+        if (size > maxBytes) {
+            bitrate = (bitrate * (maxBytes.toDouble() / size) * 0.92).toInt().coerceAtLeast(Config.MIN_VIDEO_BITRATE)
+            result = withContext(Dispatchers.Main) { export(composition(), bitrate, output, onProgress) }
+        }
+        return result
+    }
+
+    /**
+     * Bitrate de video para que el archivo final no pase de [maxBytes]: el de calidad
+     * ([qualityBitrate]) si cabe; si no, el máximo que cabe en esa duración (dejando lugar al audio).
+     */
+    private fun bitrateForSize(qualityBitrate: Int, durationUs: Long, maxBytes: Long): Int {
+        val seconds = (durationUs / 1_000_000.0).coerceAtLeast(1.0)
+        val availableBits = maxBytes * 8 * SIZE_SAFETY - AUDIO_BITRATE * seconds
+        val budget = (availableBits / seconds).toInt()
+        return minOf(qualityBitrate, budget).coerceAtLeast(Config.MIN_VIDEO_BITRATE)
     }
 
     /**

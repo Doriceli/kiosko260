@@ -83,7 +83,8 @@ Las curvas están en `SpeedEffect.kt` (puntos `posición → velocidad`) y se pu
 |---|---|---|
 | `DEFAULT_SPEED_EFFECT` | `SPEED_RAMP` | Efecto de velocidad al abrir la app. |
 | `MAX_OUTPUT_LONG_SIDE` | `3840` | Se respeta la resolución original; solo se reduce si supera 4K. |
-| `MIN_BITS_PER_PIXEL` | `6` | Bitrate mínimo (≈12 Mbps en 1080p, ≈50 Mbps en 4K); si el original tiene más, se usa el del original. |
+| `MIN_BITS_PER_PIXEL` | `6` | Bitrate de calidad (≈12 Mbps en 1080p); si el original tiene más, se usa el del original… |
+| `MAX_OUTPUT_MB` | `35` | …pero nunca se pasa de este tamaño de archivo. |
 | `MAX_FRAME_RATE` | `60f` | Límite de fps en los tramos acelerados. |
 | `CONTRAST` / `SATURATION` | `0f` | Retoque de color opcional (0 = colores originales). |
 | `PROCESADOS_FOLDER` | `PROCESADOS` | Carpeta dentro de Download donde se guardan los videos terminados. |
@@ -128,6 +129,25 @@ Quick Share y el hotspot **no pueden funcionar al mismo tiempo**: los dos usan l
 - Cada vez que se enciende la red, Android puede cambiar su nombre y clave. No pasa nada: el QR de Wi-Fi en pantalla siempre está actualizado.
 
 > 💡 **La opción más cómoda para eventos largos:** un mini router Wi-Fi (no necesita internet) con el kiosko conectado a él. Apaga el interruptor "Red Wi-Fi propia" y así Quick Share y la descarga por QR funcionan **a la vez**, sin cambios de modo, y los invitados no tienen que reconectarse cada vez.
+
+## Recepción automática de Quick Share (sin el aviso del hotspot)
+
+Para que el video se acepte solo y la red del kiosko se apague/encienda sin intervención:
+
+1. **Configura Quick Share para aceptar automáticamente** (lo más fiable). Inicia sesión con la **misma cuenta Samsung** en el celular (S23) y en la tableta, y en la tableta pon Quick Share → *Quién puede compartir contigo* → **Solo tus dispositivos / Mis dispositivos**. Entre dispositivos de la misma cuenta, Quick Share **acepta sin preguntar**.
+2. En la app toca **🔔 Activar recepción automática de Quick Share** y activa *Kiosko Video QR* en "Acceso a notificaciones". Con eso la app:
+   - **apaga la red del kiosko al instante** en cuanto aparece una solicitud de Quick Share (así no sale el aviso de "desactivar hotspot");
+   - pulsa **"Aceptar"** automáticamente si la notificación trae ese botón (`AUTO_ACCEPT_QUICK_SHARE` en `Config.kt`);
+   - cuando termina la transferencia, detecta el archivo en ~1,5 s, empieza a editar y **vuelve a encender la red** para mostrar el QR de Wi-Fi y el del video.
+3. Si alguna versión de Quick Share muestra la solicitud como ventana (no como notificación), la app igual la detecta por la carpeta y la red se enciende sola al terminar; solo habría que tocar "Aceptar" en esa ventana.
+
+> ⚠️ Con "Todos" como visibilidad, la aceptación automática aceptaría envíos de cualquier persona cercana: usa "Solo tus dispositivos".
+
+## Tamaño del video (máx. 35 MB)
+
+- Cada video final se limita a **35 MB** (`MAX_OUTPUT_MB`) para que se descargue rápido. La app calcula el bitrate según la duración final: para tus videos del S23 (1080×1920, 60 fps, ~10 s) queda en ~31 MB (≈11–16 Mbps según el efecto), que en 1080p se ve muy bien.
+- Si el codificador se pasa del límite, la app vuelve a codificar una vez con un bitrate menor (tarda un poco más, pero garantiza el tamaño).
+- La salida es H.264 (compatible con todos los celulares, WhatsApp, Instagram y TikTok), aunque el original venga en HEVC.
 
 ## Autorización para redes sociales
 

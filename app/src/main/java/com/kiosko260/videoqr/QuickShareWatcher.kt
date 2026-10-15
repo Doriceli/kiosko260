@@ -27,7 +27,7 @@ class QuickShareWatcher(
         override fun onChange(selfChange: Boolean) {
             // Quick Share escribe el archivo por partes: esperar un poco a que termine.
             handler.removeCallbacks(scanRunnable)
-            handler.postDelayed(scanRunnable, 3_000)
+            handler.postDelayed(scanRunnable, 1_500)
         }
     }
 
@@ -37,7 +37,7 @@ class QuickShareWatcher(
         startedAtSeconds = System.currentTimeMillis() / 1000 - 5
         context.contentResolver.registerContentObserver(COLLECTION, true, observer)
         // Respaldo por si algún equipo no notifica el cambio.
-        handler.postDelayed(periodicScan, 10_000)
+        handler.postDelayed(periodicScan, 5_000)
     }
 
     fun stop() {
@@ -50,7 +50,7 @@ class QuickShareWatcher(
     private val periodicScan = object : Runnable {
         override fun run() {
             scan()
-            if (running) handler.postDelayed(this, 10_000)
+            if (running) handler.postDelayed(this, 5_000)
         }
     }
 

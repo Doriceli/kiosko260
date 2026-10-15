@@ -7,10 +7,12 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.view.WindowManager
 import android.widget.AdapterView
 import android.widget.ArrayAdapter
+import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
@@ -108,6 +110,10 @@ class MainActivity : AppCompatActivity() {
             if (checked) ensureOwnNetwork() else app.receiveMode()
         }
         binding.receiveButton.setOnClickListener { app.receiveMode() }
+        binding.notificationAccessButton.setOnClickListener {
+            Toast.makeText(this, R.string.notification_access_help, Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }
         binding.shareButton.setOnClickListener { app.shareMode() }
         binding.doubleLogoSwitch.isChecked = app.overlayLayout == OverlayLayout.DOUBLE_TOP
         binding.doubleLogoSwitch.setOnCheckedChangeListener { _, checked ->
@@ -153,6 +159,8 @@ class MainActivity : AppCompatActivity() {
         app.refreshCounter()
         setupMusicSpinner() // por si se copiaron canciones nuevas
         updateDoubleLogoWarning()
+        binding.notificationAccessButton.visibility =
+            if (app.useOwnNetwork && !QuickShareNotificationListener.isEnabled(this)) View.VISIBLE else View.GONE
         app.refreshCurrentUrl()
         updateNetworkInfo(app.state.value)
     }

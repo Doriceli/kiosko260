@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fondo de todo lo que se puede tocar: blanco sólido con borde rojo (los avisos son translúcidos). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/blanco" />
+    <stroke android:width="3dp" android:color="@color/rojo" />
+    <corners android:radius="18dp" />
+</shape>

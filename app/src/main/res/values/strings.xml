@@ -18,8 +18,10 @@
     <string name="mode_share">📶 Red del kiosko encendida: escanea el QR</string>
     <string name="mode_share_countdown">📶 Red del kiosko encendida · vuelve a Quick Share en %1$d:%2$02d</string>
     <string name="mode_external">🌐 Usando un Wi-Fi externo (Quick Share y QR funcionan a la vez)</string>
-    <string name="receive_button">📥 Recibir (Quick Share)</string>
-    <string name="share_button">📶 Mostrar QR</string>
+    <string name="receive_button">👉 📥 Recibir (Quick Share)</string>
+    <string name="share_button">👉 📶 Mostrar QR</string>
+    <string name="notification_access">🔔 Activar recepción automática de Quick Share</string>
+    <string name="notification_access_help">En la lista, activa \"Kiosko Video QR\" y vuelve a la app.</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>
@@ -27,7 +29,7 @@
     <string name="counter_today">Videos hoy: %1$d</string>
     <string name="preview_description">Vista previa del video a compartir</string>
     <string name="scan_me">Escanéame 📲</string>
-    <string name="pick_video">Elegir un video manualmente</string>
+    <string name="pick_video">👉 🎞️ Elegir un video manualmente</string>
     <string name="history_count">%1$d videos en Download/PROCESADOS · toca uno para mostrar su QR</string>
     <string name="history_empty">Todavía no hay videos procesados.</string>
     <string name="network_ok">Servidor activo en http://%1$s:%2$d — los clientes deben estar en la misma red Wi-Fi.</string>

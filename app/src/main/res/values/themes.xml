@@ -8,4 +8,19 @@
         <item name="android:statusBarColor">@color/naranja</item>
         <item name="android:navigationBarColor">@color/rosa</item>
     </style>
+
+    <!-- Botones: blancos, borde rojo grueso, sombra y texto grande para que se vean "tocables". -->
+    <style name="KioskButton" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/blanco</item>
+        <item name="android:textColor">@color/rojo</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:minHeight">62dp</item>
+        <item name="strokeColor">@color/rojo</item>
+        <item name="strokeWidth">3dp</item>
+        <item name="cornerRadius">31dp</item>
+        <item name="android:elevation">8dp</item>
+        <item name="android:stateListAnimator">@null</item>
+    </style>
 </resources>

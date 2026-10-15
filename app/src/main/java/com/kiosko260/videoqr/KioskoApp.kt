@@ -172,6 +172,19 @@ class KioskoApp : Application() {
         _state.update { it.copy(hotspotOffAt = null) }
     }
 
+    /**
+     * Llegó una solicitud de Quick Share (detectada por la notificación): se apaga la red al instante
+     * para que la transferencia use el Wi-Fi. Al terminar, la edición del video la vuelve a encender.
+     */
+    fun onQuickShareIncoming() {
+        scope.launch {
+            if (hotspot.isActive) {
+                receiveMode()
+                _state.update { it.copy(status = "📥 Recibiendo video por Quick Share…") }
+            }
+        }
+    }
+
     /** El invitado ya descargó su video: en unos segundos se vuelve al modo Quick Share. */
     private fun onVideoDownloaded() {
         if (hotspot.isActive && _state.value.progress == null) {
