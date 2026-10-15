@@ -37,6 +37,8 @@ data class KioskState(
     val pending: Int = 0,
     val current: SharedVideo? = null,
     val todayCount: Int = 0,
+    /** Videos hechos en el evento actual (se reinicia a mano con el botón Reiniciar). */
+    val eventCount: Int = 0,
     /** Cambia cada vez que se termina un video, para refrescar la pestaña de procesados. */
     val libraryVersion: Int = 0,
     /** Red Wi-Fi propia del kiosko (sin internet), si está activa. */
@@ -81,6 +83,23 @@ class KioskoApp : Application() {
         get() = prefs.getString(KEY_HASHTAG, null) ?: Config.HASHTAG
         set(value) = prefs.edit().putString(KEY_HASHTAG, value.trim()).apply()
 
+    /** Nombre del evento actual: se agrega al nombre del archivo de cada video. */
+    var eventName: String
+        get() = prefs.getString(KEY_EVENT_NAME, "").orEmpty()
+        set(value) = prefs.edit().putString(KEY_EVENT_NAME, value.trim()).apply()
+
+    private var eventCount: Int
+        get() = prefs.getInt(KEY_EVENT_COUNT, 0)
+        set(value) {
+            prefs.edit().putInt(KEY_EVENT_COUNT, value).apply()
+            _state.update { it.copy(eventCount = value) }
+        }
+
+    /** Reinicio MANUAL del contador del evento (cerrar la app no lo reinicia). */
+    fun resetEventCounter() {
+        eventCount = 0
+    }
+
     /** Si el kiosko debe crear su propia red Wi-Fi sin internet (se recuerda). */
     var useOwnNetwork: Boolean
         get() = prefs.getBoolean(KEY_OWN_NETWORK, true)
@@ -114,7 +133,7 @@ class KioskoApp : Application() {
 
     /** Vuelve a leer el contador (a medianoche pasa a 0). */
     fun refreshCounter() {
-        _state.update { it.copy(todayCount = counter.today()) }
+        _state.update { it.copy(todayCount = counter.today(), eventCount = eventCount) }
     }
 
     fun startServer() {
@@ -239,8 +258,13 @@ class KioskoApp : Application() {
 
     fun labelFor(video: ProcessedVideo): String {
         val time = video.createdAt?.format(java.time.format.DateTimeFormatter.ofPattern("dd/MM HH:mm")) ?: ""
+        val title = when {
+            video.event != null -> "${video.event} #${video.eventNumber}"
+            video.number != null -> "Video #${video.number}"
+            else -> null
+        }
         return listOfNotNull(
-            video.number?.let { "Video #$it" },
+            title,
             time.ifEmpty { null },
             "✅".takeIf { video.authorized },
         ).joinToString(" · ")
@@ -248,7 +272,8 @@ class KioskoApp : Application() {
 
     private suspend fun processQueue() {
         for (uri in queue) {
-            val id = library.newId()
+            val eventNumber = eventCount + 1
+            val id = library.newId(eventName, eventNumber)
             val track = selectedTrack ?: withContext(Dispatchers.IO) { customization.musicTracks() }.randomOrNull()
             val effect = speedEffect
             val layout = overlayLayout
@@ -263,6 +288,7 @@ class KioskoApp : Application() {
                     _state.update { it.copy(progress = p) }
                 }
                 val number = counter.increment()
+                eventCount = eventNumber
                 val saved = withContext(Dispatchers.IO) {
                     library.save(id, exported, number)
                     processor.createThumbnail(library.videoFile(id), library.thumbnailFile(id))
@@ -296,6 +322,8 @@ class KioskoApp : Application() {
         const val TAG = "KioskoApp"
         const val KEY_LAYOUT = "diseno"
         const val KEY_HASHTAG = "hashtag"
+        const val KEY_EVENT_NAME = "evento_nombre"
+        const val KEY_EVENT_COUNT = "evento_contador"
         const val KEY_OWN_NETWORK = "red_propia"
     }
 }

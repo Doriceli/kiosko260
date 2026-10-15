@@ -81,13 +81,13 @@ object Config {
     /**
      * Paleta energética/juvenil. Se usa en el marco, la pantalla del kiosko y la página de descarga.
      */
-    val NARANJA = Color.parseColor("#F68425")
     val ROJO = Color.parseColor("#FB3A4B")
-    val NARANJA_FUEGO = Color.parseColor("#FF7034")
     val CORAL = Color.parseColor("#F54945")
     val AMARILLO = Color.parseColor("#FCAB14")
     val ROSA = Color.parseColor("#F178AF")
     val ROSA_VIEJO = Color.parseColor("#E47493")
+    val MORADO = Color.parseColor("#800080")
+    val AZUL_ELECTRICO = Color.parseColor("#7DF9FF")
 
     /**
      * Carpeta que se vigila (patrón SQL LIKE sobre RELATIVE_PATH de MediaStore).

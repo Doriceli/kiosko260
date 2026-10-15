@@ -25,6 +25,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.kiosko260.videoqr.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
@@ -103,6 +104,9 @@ class MainActivity : AppCompatActivity() {
             app.hashtag = text?.toString().orEmpty()
             binding.hashtag.text = app.hashtag
         }
+        binding.eventNameInput.setText(app.eventName)
+        binding.eventNameInput.doAfterTextChanged { text -> app.eventName = text?.toString().orEmpty() }
+        binding.resetEventButton.setOnClickListener { confirmEventReset() }
         binding.authorizeCheck.setOnCheckedChangeListener { _, checked -> app.setAuthorized(checked) }
         binding.ownNetworkSwitch.isChecked = app.useOwnNetwork
         binding.ownNetworkSwitch.setOnCheckedChangeListener { _, checked ->
@@ -163,6 +167,17 @@ class MainActivity : AppCompatActivity() {
             if (app.useOwnNetwork && !QuickShareNotificationListener.isEnabled(this)) View.VISIBLE else View.GONE
         app.refreshCurrentUrl()
         updateNetworkInfo(app.state.value)
+    }
+
+    /** Reinicio manual del contador del evento, con confirmación para no borrarlo por accidente. */
+    private fun confirmEventReset() {
+        val name = app.eventName.ifBlank { "este evento" }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.event_reset_title)
+            .setMessage(getString(R.string.event_reset_message, name, app.state.value.eventCount))
+            .setPositiveButton(R.string.event_reset_confirm) { _, _ -> app.resetEventCounter() }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
     }
 
     /** "Recibiendo por Quick Share" o "Compartiendo QR (se apaga en m:ss)". */
@@ -239,6 +254,7 @@ class MainActivity : AppCompatActivity() {
             "${state.status}  (${state.pending - 1} en cola)"
         } else state.status
         binding.counter.text = getString(R.string.counter_today, state.todayCount)
+        binding.eventCounter.text = getString(R.string.event_counter, state.eventCount)
 
         binding.progress.visibility = if (state.progress != null) View.VISIBLE else View.GONE
         binding.progress.progress = state.progress ?: 0

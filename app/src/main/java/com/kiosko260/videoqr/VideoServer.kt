@@ -48,15 +48,15 @@ class VideoServer(
             <style>
               body{margin:0;font-family:system-ui,sans-serif;color:#fff;text-align:center;padding:16px;
                    box-sizing:border-box;min-height:100vh;
-                   background:linear-gradient(160deg,#FCAB14 0%,#F68425 25%,#FB3A4B 55%,#F178AF 85%,#E47493 100%)}
+                   background:linear-gradient(160deg,#FB3A4B 0%,#F54945 20%,#F178AF 55%,#E47493 75%,#800080 100%)}
               h1{margin:8px 0 0;font-size:40px;font-weight:900;letter-spacing:1px;
-                 text-shadow:0 3px 0 #F54945,0 6px 18px rgba(0,0,0,.25);transform:rotate(-3deg)}
+                 text-shadow:0 3px 0 #800080,0 6px 18px rgba(0,0,0,.25);transform:rotate(-3deg)}
               h2{font-weight:700;margin:6px 0 16px}
               video{width:100%;max-width:420px;aspect-ratio:9/16;object-fit:cover;border-radius:22px;
                     background:#000;border:4px solid #fff;box-shadow:0 10px 30px rgba(0,0,0,.3)}
               a.btn{display:block;max-width:420px;margin:18px auto;padding:18px;border-radius:999px;
-                    background:#fff;color:#FB3A4B;font-size:21px;font-weight:900;text-decoration:none;
-                    box-shadow:0 6px 0 #F54945}
+                    background:#7DF9FF;color:#800080;font-size:21px;font-weight:900;text-decoration:none;
+                    border:3px solid #fff;box-shadow:0 6px 0 #800080}
               p{font-size:15px;max-width:420px;margin:8px auto;text-shadow:0 1px 2px rgba(0,0,0,.25)}
             </style></head><body>
             <h1>${hashtag()}</h1>

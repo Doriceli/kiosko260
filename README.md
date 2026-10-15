@@ -58,7 +58,7 @@ En la pantalla del kiosko hay un interruptor **"Logos arriba: hashtag.png + marc
   - Colores originales: el retoque de contraste/saturación viene **desactivado** (se puede activar en `Config.kt`).
 - **Sin margen**: el video ocupa toda la pantalla (el borde con degradado se puede reactivar con `SHOW_BORDER = true`). Encima va un **sticker #etu2026** pequeño y semitransparente en la **esquina inferior derecha** (tamaño y opacidad: `HASHTAG_SIZE`, `HASHTAG_ALPHA`).
 - El logo queda debajo de las pestañas de arriba de TikTok/Reels. Ojo: en TikTok el disco de música giratorio aparece en la esquina inferior derecha y puede tapar el sticker en la vista del feed (en el video descargado siempre se ve).
-- Paleta usada en la app y en la página de descarga: `#F68425 #FB3A4B #FF7034 #F54945 #FCAB14 #F178AF #E47493`.
+- Paleta usada en la app y en la página de descarga: `#FB3A4B #F54945 #FCAB14 #F178AF #E47493 #800080 #7DF9FF` (lo que se puede tocar es **azul eléctrico** o blanco con borde azul eléctrico; los avisos son translúcidos). El hashtag al final del video sigue en **letras blancas**.
 
 ### Efecto de velocidad (se elige en pantalla)
 | Opción | Qué hace |
@@ -148,6 +148,14 @@ Para que el video se acepte solo y la red del kiosko se apague/encienda sin inte
 - Cada video final se limita a **35 MB** (`MAX_OUTPUT_MB`) para que se descargue rápido. La app calcula el bitrate según la duración final: para tus videos del S23 (1080×1920, 60 fps, ~10 s) queda en ~31 MB (≈11–16 Mbps según el efecto), que en 1080p se ve muy bien.
 - Si el codificador se pasa del límite, la app vuelve a codificar una vez con un bitrate menor (tarda un poco más, pero garantiza el tamaño).
 - La salida es H.264 (compatible con todos los celulares, WhatsApp, Instagram y TikTok), aunque el original venga en HEVC.
+
+## Eventos (nombre y contador por evento)
+
+- Debajo de **"Videos hoy"** está el campo **Nombre del evento** (ej. *Boda Ana y Luis*). A su lado, el **contador del evento** y el botón **↺ Reiniciar**.
+- Cada video lleva el evento y su número en el **nombre del archivo**: `Boda-Ana-y-Luis_007_20261015183005aZ3k.mp4` (evento, nº dentro del evento, fecha/hora). Acentos y símbolos se quitan para que el nombre funcione en cualquier equipo.
+- El contador del evento **no se reinicia al cerrar la app ni a medianoche**: solo con **↺ Reiniciar** (pide confirmación). El contador "Videos hoy" sigue reiniciándose solo cada día.
+- En la pestaña *Procesados* cada video muestra "Evento #N · fecha hora".
+- Si el nombre del evento está vacío, el archivo se llama como antes (solo fecha y hora).
 
 ## Autorización para redes sociales
 

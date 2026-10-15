@@ -22,7 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:rotation="-3"
-            android:shadowColor="@color/coral"
+            android:shadowColor="@color/morado"
             android:shadowDy="4"
             android:shadowRadius="1"
             android:textColor="@color/blanco"
@@ -43,13 +43,76 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- Evento actual: nombre (va en el nombre del archivo) + contador del evento con reinicio manual -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingStart="20dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="20dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/event_label"
+            android:textColor="@color/blanco"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/eventCounter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_card"
+            android:paddingStart="14dp"
+            android:paddingTop="6dp"
+            android:paddingEnd="14dp"
+            android:paddingBottom="6dp"
+            android:textColor="@color/blanco"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/resetEventButton"
+            style="@style/KioskButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/event_reset"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <EditText
+        android:id="@+id/eventNameInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/bg_interactive"
+        android:drawableEnd="@android:drawable/ic_menu_edit"
+        android:hint="@string/event_hint"
+        android:importantForAutofill="no"
+        android:inputType="textCapWords"
+        android:maxLength="40"
+        android:minHeight="52dp"
+        android:paddingStart="14dp"
+        android:paddingEnd="14dp"
+        android:textColor="@color/morado"
+        android:textColorHint="@color/rosa_viejo"
+        android:textStyle="bold" />
+
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabs"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:background="@android:color/transparent"
-        app:tabIndicatorColor="@color/blanco"
+        app:tabIndicatorColor="@color/azul_electrico"
         app:tabIndicatorFullWidth="false"
         app:tabIndicatorHeight="4dp"
         app:tabSelectedTextColor="@color/blanco"
@@ -91,7 +154,7 @@
                     android:layout_marginTop="12dp"
                     android:max="100"
                     android:progressBackgroundTint="@color/blanco_suave"
-                    android:progressTint="@color/blanco"
+                    android:progressTint="@color/azul_electrico"
                     android:visibility="gone" />
 
                 <Button
@@ -115,6 +178,37 @@
                     android:textColor="@color/blanco"
                     android:textSize="16sp"
                     android:textStyle="bold" />
+
+                <!-- QR para conectarse a la red Wi-Fi del kiosko (sin internet) -->
+                <LinearLayout
+                    android:id="@+id/wifiRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
+                    android:background="@drawable/bg_card"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="10dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:id="@+id/wifiQr"
+                        android:layout_width="130dp"
+                        android:layout_height="130dp"
+                        android:background="@drawable/bg_qr"
+                        android:contentDescription="@string/wifi_qr_description"
+                        android:padding="6dp"
+                        android:scaleType="fitCenter" />
+
+                    <TextView
+                        android:id="@+id/wifiText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:textColor="@color/blanco"
+                        android:textSize="15sp" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -212,46 +306,16 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
                     android:background="@drawable/bg_interactive"
-                    android:buttonTint="@color/rojo"
+                    android:buttonTint="@color/morado"
                     android:elevation="6dp"
                     android:minHeight="60dp"
                     android:padding="10dp"
                     android:text="@string/authorize"
-                    android:textColor="@color/rojo"
+                    android:textColor="@color/morado"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:visibility="gone" />
 
-                <!-- QR para conectarse a la red Wi-Fi del kiosko (sin internet) -->
-                <LinearLayout
-                    android:id="@+id/wifiRow"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:background="@drawable/bg_card"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="10dp"
-                    android:visibility="gone">
-
-                    <ImageView
-                        android:id="@+id/wifiQr"
-                        android:layout_width="130dp"
-                        android:layout_height="130dp"
-                        android:background="@drawable/bg_qr"
-                        android:contentDescription="@string/wifi_qr_description"
-                        android:padding="6dp"
-                        android:scaleType="fitCenter" />
-
-                    <TextView
-                        android:id="@+id/wifiText"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:textColor="@color/blanco"
-                        android:textSize="15sp" />
-                </LinearLayout>
 
                 <TextView
                     android:id="@+id/url"
@@ -293,7 +357,7 @@
                     android:minHeight="48dp"
                     android:paddingStart="14dp"
                     android:paddingEnd="14dp"
-                    android:textColor="@color/rojo"
+                    android:textColor="@color/morado"
                     android:textColorHint="@color/rosa_viejo"
                     android:textStyle="bold" />
 

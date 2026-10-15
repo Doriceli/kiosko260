@@ -4,6 +4,7 @@ import android.content.Context
 import android.media.MediaScannerConnection
 import android.os.Environment
 import java.io.File
+import java.text.Normalizer
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -14,6 +15,9 @@ data class ProcessedVideo(
     val createdAt: LocalDateTime?,
     val number: Int?,
     val authorized: Boolean,
+    /** Nombre del evento y número del video dentro del evento (salen del nombre del archivo). */
+    val event: String? = null,
+    val eventNumber: Int? = null,
 )
 
 /**
@@ -34,10 +38,16 @@ class VideoLibrary(private val context: Context) {
 
     private val numbers = context.getSharedPreferences("numeros", Context.MODE_PRIVATE)
 
-    /** Id con fecha y hora + 4 caracteres al azar, p. ej. `20261011183005aZ3k` (también es el nombre del archivo). */
-    fun newId(): String {
+    /**
+     * Id del video, que también es el nombre del archivo:
+     * `<Evento>_<nº en el evento>_<fecha y hora><4 al azar>`, p. ej. `Boda-Ana-y-Luis_007_20261015183005aZ3k`.
+     * Sin evento: `20261015183005aZ3k`.
+     */
+    fun newId(event: String = "", eventNumber: Int = 0): String {
         val chars = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-        return LocalDateTime.now().format(ID_DATE) + (1..4).map { chars.random() }.joinToString("")
+        val stamp = LocalDateTime.now().format(ID_DATE) + (1..4).map { chars.random() }.joinToString("")
+        val safeEvent = sanitizeEvent(event)
+        return if (safeEvent.isEmpty()) stamp else "${safeEvent}_${eventNumber.toString().padStart(3, '0')}_$stamp"
     }
 
     fun videoFile(id: String) = File(videosDir, "$id.mp4")
@@ -88,13 +98,28 @@ class VideoLibrary(private val context: Context) {
 
     private fun toProcessed(file: File): ProcessedVideo {
         val id = file.nameWithoutExtension
-        val createdAt = runCatching { LocalDateTime.parse(id.take(14), ID_DATE) }.getOrNull()
+        val match = NAME_PARTS.matchEntire(id)
+        val createdAt = match?.let { runCatching { LocalDateTime.parse(it.groupValues[3], ID_DATE) }.getOrNull() }
         val number = numbers.getInt(id, 0).takeIf { it > 0 }
-        return ProcessedVideo(id, file, createdAt, number, isAuthorized(id))
+        val event = match?.groupValues?.get(1)?.takeIf { it.isNotEmpty() }?.replace('-', ' ')
+        val eventNumber = match?.groupValues?.get(2)?.toIntOrNull()
+        return ProcessedVideo(id, file, createdAt, number, isAuthorized(id), event, eventNumber)
     }
 
     companion object {
-        val ID_PATTERN = Regex("^[A-Za-z0-9]{6,32}$")
+        val ID_PATTERN = Regex("^[A-Za-z0-9_-]{6,80}$")
+
+        /** (evento)_(número)_(yyyyMMddHHmmss)xxxx, con evento y número opcionales. */
+        private val NAME_PARTS = Regex("""^(?:([A-Za-z0-9-]+)_(\d+)_)?(\d{14})[A-Za-z0-9]{4}$""")
+
+        /** "Boda Ana & Luis" → "Boda-Ana-Luis" (sin acentos ni símbolos, máx. 30 caracteres). */
+        fun sanitizeEvent(event: String): String =
+            Normalizer.normalize(event.trim(), Normalizer.Form.NFD)
+                .replace(Regex("\\p{M}+"), "")
+                .replace(Regex("[^A-Za-z0-9]+"), "-")
+                .trim('-')
+                .take(30)
+                .trim('-')
         private val ID_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
         private val LOG_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
     }

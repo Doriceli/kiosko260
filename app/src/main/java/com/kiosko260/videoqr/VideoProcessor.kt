@@ -299,7 +299,7 @@ class VideoProcessor(private val context: Context) {
         // Borde opcional con degradado diagonal y esquinas interiores redondeadas.
         val border = if (Config.SHOW_BORDER) 2.2f * unit else 0f
         if (Config.SHOW_BORDER) {
-            val palette = intArrayOf(Config.AMARILLO, Config.NARANJA, Config.NARANJA_FUEGO, Config.ROJO, Config.ROSA)
+            val palette = intArrayOf(Config.AZUL_ELECTRICO, Config.ROSA, Config.ROJO, Config.MORADO)
             val radius = 5f * unit
             val frame = Path().apply {
                 fillType = Path.FillType.EVEN_ODD
@@ -355,7 +355,7 @@ class VideoProcessor(private val context: Context) {
         canvas.drawRoundRect(pill, pillHeight / 2, pillHeight / 2, Paint(Paint.ANTI_ALIAS_FLAG).apply {
             shader = LinearGradient(
                 pill.left, 0f, pill.right, 0f,
-                intArrayOf(Config.AMARILLO, Config.NARANJA, Config.ROJO, Config.ROSA), null, Shader.TileMode.CLAMP,
+                intArrayOf(Config.AMARILLO, Config.ROJO, Config.ROSA, Config.MORADO), null, Shader.TileMode.CLAMP,
             )
             setShadowLayer(0.8f * unit, 0f, 0.4f * unit, Color.argb(90, 0, 0, 0))
         })

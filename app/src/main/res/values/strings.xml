@@ -22,6 +22,14 @@
     <string name="share_button">👉 📶 Mostrar QR</string>
     <string name="notification_access">🔔 Activar recepción automática de Quick Share</string>
     <string name="notification_access_help">En la lista, activa \"Kiosko Video QR\" y vuelve a la app.</string>
+    <string name="event_label">Nombre del evento</string>
+    <string name="event_hint">Ej.: Boda Ana y Luis (va en el nombre del video)</string>
+    <string name="event_counter">Evento: %1$d</string>
+    <string name="event_reset">↺ Reiniciar</string>
+    <string name="event_reset_title">¿Reiniciar el contador del evento?</string>
+    <string name="event_reset_message">El contador de \"%1$s\" vuelve a 0 (lleva %2$d videos). Los videos ya hechos no se borran.</string>
+    <string name="event_reset_confirm">Sí, reiniciar</string>
+    <string name="cancel">Cancelar</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>
