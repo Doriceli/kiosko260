@@ -36,9 +36,17 @@ object Config {
 
     /**
      * Tamaño máximo del video final, para que se transfiera rápido. La app baja el bitrate solo
-     * lo necesario para no pasarse (un video de ~20 s queda en ~13 Mbps, que se ve muy bien en 1080p).
+     * lo necesario para no pasarse (un video de ~20 s queda en ~9 Mbps HEVC ≈ 15 Mbps en H.264).
      */
-    const val MAX_OUTPUT_MB = 35
+    const val MAX_OUTPUT_MB = 25
+
+    /**
+     * Formato del video final. HEVC (H.265) da la misma calidad que H.264 con ~40 % menos peso,
+     * por eso permite videos de 25 MB sin perder calidad. Lo reproducen iPhone (iOS 11+), Android
+     * modernos, WhatsApp, Instagram y TikTok. Si la tablet no tiene codificador HEVC se usa H.264.
+     * Pon `false` para forzar H.264 (máxima compatibilidad con celulares muy viejos).
+     */
+    const val PREFER_HEVC = true
 
     /** Nunca bajar de este bitrate (aunque el video sea muy largo y pase del límite). */
     const val MIN_VIDEO_BITRATE = 4_000_000
@@ -112,6 +120,15 @@ object Config {
      */
     const val AUTO_ACCEPT_QUICK_SHARE = true
     const val AFTER_DOWNLOAD_SECONDS = 20L
+
+    /**
+     * Red Wi-Fi del evento (LAN sin internet) a la que se conectan la tablet y los invitados.
+     * Modo por defecto: con esta red Quick Share y la descarga por QR funcionan a la vez.
+     * El hotspot propio queda como alternativa (se elige en pantalla).
+     */
+    const val EVENT_WIFI_SSID = "@ETU26"
+    const val EVENT_WIFI_PASSWORD = "etu123456"
+    val DEFAULT_NETWORK_MODE = NetworkMode.EVENT_WIFI
 
     /** Puerto del servidor local de descargas. */
     const val SERVER_PORT = 8080

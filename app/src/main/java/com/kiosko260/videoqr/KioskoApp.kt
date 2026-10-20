@@ -1,6 +1,11 @@
 package com.kiosko260.videoqr
 
 import android.app.Application
+import android.net.ConnectivityManager
+import android.net.LinkProperties
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import android.net.Uri
 import android.util.Log
 import androidx.annotation.OptIn
@@ -44,6 +49,10 @@ data class KioskState(
     /** Red Wi-Fi propia del kiosko (sin internet), si está activa. */
     val hotspot: HotspotInfo? = null,
     val hotspotError: String? = null,
+    /** Wi-Fi del evento o hotspot propio. */
+    val networkMode: NetworkMode = Config.DEFAULT_NETWORK_MODE,
+    /** IP local de la tablet (null = sin red local). */
+    val localIp: String? = null,
     /** Hora (System.currentTimeMillis) en que la red se apagará sola para volver a Quick Share. */
     val hotspotOffAt: Long? = null,
 )
@@ -100,10 +109,26 @@ class KioskoApp : Application() {
         eventCount = 0
     }
 
-    /** Si el kiosko debe crear su propia red Wi-Fi sin internet (se recuerda). */
-    var useOwnNetwork: Boolean
-        get() = prefs.getBoolean(KEY_OWN_NETWORK, true)
-        set(value) = prefs.edit().putBoolean(KEY_OWN_NETWORK, value).apply()
+    /** Wi-Fi del evento (@ETU26) u hotspot propio; se recuerda. */
+    var networkMode: NetworkMode
+        get() = NetworkMode.entries.getOrNull(prefs.getInt(KEY_NETWORK_MODE, -1)) ?: Config.DEFAULT_NETWORK_MODE
+        set(value) {
+            prefs.edit().putInt(KEY_NETWORK_MODE, value.ordinal).apply()
+            _state.update { it.copy(networkMode = value) }
+            // Con la red del evento no hace falta el hotspot (y estorbaría al Wi-Fi).
+            if (value == NetworkMode.EVENT_WIFI) receiveMode()
+            refreshNetwork()
+        }
+
+    /** true = modo hotspot propio con cambio automático para Quick Share. */
+    val useOwnNetwork: Boolean get() = networkMode == NetworkMode.HOTSPOT
+
+    /** Vuelve a leer la IP local (al cambiar de red) y regenera el QR del video en pantalla. */
+    fun refreshNetwork() {
+        val ip = NetworkUtils.localIpAddress(preferHotspot = hotspot.isActive)
+        _state.update { it.copy(localIp = ip) }
+        refreshCurrentUrl()
+    }
 
     private lateinit var hotspot: KioskHotspot
 
@@ -118,10 +143,13 @@ class KioskoApp : Application() {
             // La IP de la red nueva tarda un instante en estar lista: se recalcula el QR.
             scope.launch {
                 delay(1_500)
-                refreshCurrentUrl()
+                refreshNetwork()
             }
         }
         refreshCounter()
+        _state.update { it.copy(networkMode = networkMode) }
+        watchWifi()
+        refreshNetwork()
         startServer()
         scope.launch { processQueue() }
     }
@@ -129,6 +157,28 @@ class KioskoApp : Application() {
     fun enqueue(uri: Uri) {
         _state.update { it.copy(pending = it.pending + 1) }
         queue.trySend(uri)
+    }
+
+    /** Avisa cuando la tablet se conecta o desconecta de un Wi-Fi (p. ej. @ETU26) para actualizar el QR. */
+    private fun watchWifi() {
+        val connectivity = getSystemService(ConnectivityManager::class.java) ?: return
+        val request = NetworkRequest.Builder()
+            .addTransportType(NetworkCapabilities.TRANSPORT_WIFI)
+            .removeCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) // la red del evento no tiene internet
+            .build()
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) = later()
+            override fun onLost(network: Network) = later()
+            override fun onLinkPropertiesChanged(network: Network, linkProperties: LinkProperties) = later()
+
+            private fun later() {
+                scope.launch {
+                    delay(800) // la IP tarda un instante en asignarse
+                    refreshNetwork()
+                }
+            }
+        }
+        runCatching { connectivity.registerNetworkCallback(request, callback) }
     }
 
     /** Vuelve a leer el contador (a medianoche pasa a 0). */
@@ -239,7 +289,7 @@ class KioskoApp : Application() {
             _state.update {
                 it.copy(
                     status = if (url != null) "Escanea el QR para descargar este video"
-                    else "Activa la red del kiosko para mostrar el QR",
+                    else "Sin red: conecta la tablet a ${Config.EVENT_WIFI_SSID} (o usa el hotspot) para mostrar el QR",
                     current = SharedVideo(
                         video.id, url, thumbnail?.absolutePath, video.number, labelFor(video), video.authorized,
                     ),
@@ -298,7 +348,7 @@ class KioskoApp : Application() {
                 _state.update {
                     it.copy(
                         status = if (url != null) "¡Listo! Escanea el QR para descargar tu video"
-                        else "Video listo: activa la red del kiosko para mostrar el QR",
+                        else "Video listo: conecta la tablet a ${Config.EVENT_WIFI_SSID} (o usa el hotspot) para mostrar el QR",
                         progress = null,
                         current = SharedVideo(id, url, library.thumbnailFile(id).absolutePath, number, labelFor(saved)),
                         todayCount = number,
@@ -324,6 +374,6 @@ class KioskoApp : Application() {
         const val KEY_HASHTAG = "hashtag"
         const val KEY_EVENT_NAME = "evento_nombre"
         const val KEY_EVENT_COUNT = "evento_contador"
-        const val KEY_OWN_NETWORK = "red_propia"
+        const val KEY_NETWORK_MODE = "modo_red"
     }
 }

@@ -210,7 +210,16 @@
                         android:textSize="15sp" />
                 </LinearLayout>
 
+                <Button
+                    android:id="@+id/connectWifiButton"
+                    style="@style/KioskButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone" />
+
                 <LinearLayout
+                    android:id="@+id/hotspotButtons"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
@@ -361,14 +370,41 @@
                     android:textColorHint="@color/rosa_viejo"
                     android:textStyle="bold" />
 
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/ownNetworkSwitch"
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="@string/own_network"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/network_mode_label"
                     android:textColor="@color/blanco"
                     android:textStyle="bold" />
+
+                <RadioGroup
+                    android:id="@+id/networkModeGroup"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_interactive"
+                    android:elevation="6dp"
+                    android:padding="6dp">
+
+                    <RadioButton
+                        android:id="@+id/radioEventWifi"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/morado"
+                        android:minHeight="52dp"
+                        android:textColor="@color/morado"
+                        android:textStyle="bold" />
+
+                    <RadioButton
+                        android:id="@+id/radioHotspot"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:buttonTint="@color/morado"
+                        android:minHeight="52dp"
+                        android:text="@string/network_mode_hotspot"
+                        android:textColor="@color/morado"
+                        android:textStyle="bold" />
+                </RadioGroup>
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/doubleLogoSwitch"

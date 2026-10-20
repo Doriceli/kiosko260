@@ -100,6 +100,22 @@ Las curvas están en `SpeedEffect.kt` (puntos `posición → velocidad`) y se pu
 Si no se encuentra nada en INSUMOS, la app también busca en
 `Android/data/com.kiosko260.videoqr/files/personalizacion/` (`marco.png`, `music/*.mp3`) y, por último, en los assets del APK.
 
+## Conexión con los invitados: Wi-Fi del evento (@ETU26) u hotspot
+
+En **"Conexión con los invitados"** se elige el modo (se recuerda al cerrar la app):
+
+### 🌐 Wi-Fi del evento — `@ETU26` (recomendado, por defecto)
+- La tablet y los celulares de los invitados se conectan a la red **@ETU26** (clave `etu123456`), una LAN **sin internet**.
+- Toca **👉 🌐 Conectar la tablet a @ETU26**: Android muestra *"¿Guardar esta red?"* → **Guardar**. Desde ese momento la tablet se conecta sola cada vez que la red esté disponible.
+- En pantalla aparece el **QR de la red @ETU26** (paso 1 para el invitado) y, al terminar cada video, su **QR de descarga** (paso 2).
+- En este modo **Quick Share y la descarga por QR funcionan a la vez**: no hay cambios de modo ni avisos de "desactivar hotspot".
+- Si la tablet pierde la red, el aviso lo indica y vuelve a aparecer el botón *Conectar*. Al reconectar, el QR se regenera solo con la nueva IP.
+- El nombre y la clave están en `Config.kt` (`EVENT_WIFI_SSID`, `EVENT_WIFI_PASSWORD`).
+- ⚠️ En el router, el **aislamiento de clientes / AP isolation debe estar desactivado**; si no, los celulares no pueden "ver" a la tablet.
+
+### 📡 Hotspot del kiosko (alternativa)
+- Igual que antes: la tablet crea su propia red y la apaga/enciende sola para convivir con Quick Share (ver más abajo).
+
 ## Funciona 100 % sin internet
 
 - **El QR se genera dentro del celular** con la librería ZXing; no se consulta ningún servicio en línea.
@@ -143,19 +159,12 @@ Para que el video se acepte solo y la red del kiosko se apague/encienda sin inte
 
 > ⚠️ Con "Todos" como visibilidad, la aceptación automática aceptaría envíos de cualquier persona cercana: usa "Solo tus dispositivos".
 
-## Tamaño del video (máx. 35 MB)
+## Tamaño del video (máx. 25 MB) sin perder calidad
 
-- Cada video final se limita a **35 MB** (`MAX_OUTPUT_MB`) para que se descargue rápido. La app calcula el bitrate según la duración final: para tus videos del S23 (1080×1920, 60 fps, ~10 s) queda en ~31 MB (≈11–16 Mbps según el efecto), que en 1080p se ve muy bien.
-- Si el codificador se pasa del límite, la app vuelve a codificar una vez con un bitrate menor (tarda un poco más, pero garantiza el tamaño).
-- La salida es H.264 (compatible con todos los celulares, WhatsApp, Instagram y TikTok), aunque el original venga en HEVC.
-
-## Eventos (nombre y contador por evento)
-
-- Debajo de **"Videos hoy"** está el campo **Nombre del evento** (ej. *Boda Ana y Luis*). A su lado, el **contador del evento** y el botón **↺ Reiniciar**.
-- Cada video lleva el evento y su número en el **nombre del archivo**: `Boda-Ana-y-Luis_007_20261015183005aZ3k.mp4` (evento, nº dentro del evento, fecha/hora). Acentos y símbolos se quitan para que el nombre funcione en cualquier equipo.
-- El contador del evento **no se reinicia al cerrar la app ni a medianoche**: solo con **↺ Reiniciar** (pide confirmación). El contador "Videos hoy" sigue reiniciándose solo cada día.
-- En la pestaña *Procesados* cada video muestra "Evento #N · fecha hora".
-- Si el nombre del evento está vacío, el archivo se llama como antes (solo fecha y hora).
+- Cada video final se limita a **25 MB** (`MAX_OUTPUT_MB`).
+- Para no perder calidad con ese tamaño, el video se codifica en **HEVC (H.265)**, que da la misma calidad que H.264 con ~40 % menos peso. Para los videos del S23 (1080×1920, 60 fps, ~10 s) queda en **~22–23 MB** a 8–11 Mbps HEVC, equivalente a ~13–18 Mbps en H.264.
+- HEVC se reproduce en iPhone (iOS 11+), celulares Android modernos, WhatsApp, Instagram y TikTok. Si la tablet no tiene codificador HEVC, se usa H.264 automáticamente (respetando los 25 MB). Para forzar H.264: `PREFER_HEVC = false`.
+- Si el codificador se pasa del límite, la app vuelve a codificar una vez con un bitrate menor.
 
 ## Autorización para redes sociales
 

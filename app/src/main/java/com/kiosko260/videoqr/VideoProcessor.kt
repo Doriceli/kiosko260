@@ -11,6 +11,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.Typeface
+import android.media.MediaCodecList
 import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Handler
@@ -61,6 +62,14 @@ import kotlin.math.roundToInt
 class VideoProcessor(private val context: Context) {
 
     private val customization = Customization(context)
+
+    /** HEVC si la tablet puede codificarlo (y [Config.PREFER_HEVC]); si no, H.264. */
+    private val videoMimeType: String by lazy {
+        val hasHevcEncoder = MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
+            info.isEncoder && info.supportedTypes.any { it.equals(MimeTypes.VIDEO_H265, ignoreCase = true) }
+        }
+        if (Config.PREFER_HEVC && hasHevcEncoder) MimeTypes.VIDEO_H265 else MimeTypes.VIDEO_H264
+    }
 
     private companion object {
         /** Margen para que el archivo quede por debajo del límite aunque el codificador se pase un poco. */
@@ -176,7 +185,7 @@ class VideoProcessor(private val context: Context) {
             lateinit var poll: Runnable
 
             val transformer = Transformer.Builder(context)
-                .setVideoMimeType(MimeTypes.VIDEO_H264)
+                .setVideoMimeType(videoMimeType)
                 .setAudioMimeType(MimeTypes.AUDIO_AAC)
                 .setEncoderFactory(
                     DefaultEncoderFactory.Builder(context)

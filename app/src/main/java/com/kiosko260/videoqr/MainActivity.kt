@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
             setupMusicSpinner() // ya se pueden leer las canciones de INSUMOS
             refreshHistory()
             if (hasPermission(mediaPermissions.first())) startWatcher() else binding.autoSwitch.isChecked = false
-            if (app.useOwnNetwork && !hasPermission(hotspotPermission)) binding.ownNetworkSwitch.isChecked = false
+            if (app.useOwnNetwork && !hasPermission(hotspotPermission)) binding.radioEventWifi.isChecked = true
         }
 
     /** Permiso para crear la red Wi-Fi propia (Android 13+: dispositivos cercanos; antes: ubicación). */
@@ -71,8 +71,12 @@ class MainActivity : AppCompatActivity() {
 
     private val hotspotPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            if (!granted) binding.ownNetworkSwitch.isChecked = false
+            if (!granted) binding.radioEventWifi.isChecked = true
         }
+
+    /** Ventana del sistema "¿Guardar la red @ETU26?". */
+    private val addWifiLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { app.refreshNetwork() }
 
     private val pickVideo =
         registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
@@ -108,11 +112,19 @@ class MainActivity : AppCompatActivity() {
         binding.eventNameInput.doAfterTextChanged { text -> app.eventName = text?.toString().orEmpty() }
         binding.resetEventButton.setOnClickListener { confirmEventReset() }
         binding.authorizeCheck.setOnCheckedChangeListener { _, checked -> app.setAuthorized(checked) }
-        binding.ownNetworkSwitch.isChecked = app.useOwnNetwork
-        binding.ownNetworkSwitch.setOnCheckedChangeListener { _, checked ->
-            app.useOwnNetwork = checked
-            if (checked) ensureOwnNetwork() else app.receiveMode()
+        binding.radioEventWifi.text = getString(R.string.network_mode_event_wifi, Config.EVENT_WIFI_SSID)
+        if (app.networkMode == NetworkMode.EVENT_WIFI) binding.radioEventWifi.isChecked = true
+        else binding.radioHotspot.isChecked = true
+        binding.networkModeGroup.setOnCheckedChangeListener { _, checkedId ->
+            val mode = if (checkedId == R.id.radioHotspot) NetworkMode.HOTSPOT else NetworkMode.EVENT_WIFI
+            if (mode == app.networkMode) return@setOnCheckedChangeListener
+            app.networkMode = mode
+            if (mode == NetworkMode.HOTSPOT) ensureOwnNetwork()
+            updateNotificationAccessButton()
+            render(app.state.value)
         }
+        binding.connectWifiButton.text = getString(R.string.connect_wifi, Config.EVENT_WIFI_SSID)
+        binding.connectWifiButton.setOnClickListener { connectEventWifi() }
         binding.receiveButton.setOnClickListener { app.receiveMode() }
         binding.notificationAccessButton.setOnClickListener {
             Toast.makeText(this, R.string.notification_access_help, Toast.LENGTH_LONG).show()
@@ -163,10 +175,29 @@ class MainActivity : AppCompatActivity() {
         app.refreshCounter()
         setupMusicSpinner() // por si se copiaron canciones nuevas
         updateDoubleLogoWarning()
+        updateNotificationAccessButton()
+        app.refreshNetwork()
+        updateNetworkInfo(app.state.value)
+    }
+
+    private fun updateNotificationAccessButton() {
         binding.notificationAccessButton.visibility =
             if (app.useOwnNetwork && !QuickShareNotificationListener.isEnabled(this)) View.VISIBLE else View.GONE
-        app.refreshCurrentUrl()
-        updateNetworkInfo(app.state.value)
+    }
+
+    /** Guarda la red del evento en la tablet (Android se conecta sola desde ese momento). */
+    private fun connectEventWifi() {
+        if (!EventWifi.isWifiEnabled(this)) {
+            Toast.makeText(this, R.string.wifi_turn_on, Toast.LENGTH_LONG).show()
+            runCatching { addWifiLauncher.launch(EventWifi.wifiPanelIntent()) }
+            return
+        }
+        runCatching { addWifiLauncher.launch(EventWifi.addNetworkIntent(this)) }
+            .onFailure {
+                // Si el equipo no tiene esa ventana, se abren los ajustes de Wi-Fi.
+                Toast.makeText(this, getString(R.string.wifi_manual, Config.EVENT_WIFI_SSID, Config.EVENT_WIFI_PASSWORD), Toast.LENGTH_LONG).show()
+                runCatching { startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) }
+            }
     }
 
     /** Reinicio manual del contador del evento, con confirmación para no borrarlo por accidente. */
@@ -182,10 +213,16 @@ class MainActivity : AppCompatActivity() {
 
     /** "Recibiendo por Quick Share" o "Compartiendo QR (se apaga en m:ss)". */
     private fun updateModeText(state: KioskState) {
-        if (!app.useOwnNetwork) {
-            binding.modeText.text = getString(R.string.mode_external)
-            binding.receiveButton.isEnabled = false
-            binding.shareButton.isEnabled = false
+        val eventWifi = state.networkMode == NetworkMode.EVENT_WIFI
+        binding.hotspotButtons.visibility = if (eventWifi) View.GONE else View.VISIBLE
+        val connected = state.localIp != null && state.hotspot == null
+        binding.connectWifiButton.visibility = if (eventWifi && !connected) View.VISIBLE else View.GONE
+        if (eventWifi) {
+            binding.modeText.text = if (connected) {
+                getString(R.string.mode_event_wifi, Config.EVENT_WIFI_SSID, state.localIp)
+            } else {
+                getString(R.string.mode_event_wifi_missing, Config.EVENT_WIFI_SSID)
+            }
             return
         }
         val offAt = state.hotspotOffAt
@@ -202,8 +239,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateNetworkInfo(state: KioskState) {
-        val ip = NetworkUtils.localIpAddress(preferHotspot = state.hotspot != null)
+        val ip = state.localIp
         binding.networkInfo.text = when {
+            state.networkMode == NetworkMode.EVENT_WIFI ->
+                if (ip != null) getString(R.string.network_ok, ip, Config.SERVER_PORT)
+                else getString(R.string.network_missing_event, Config.EVENT_WIFI_SSID)
             state.hotspot != null -> getString(R.string.network_own, state.hotspot.ssid, ip ?: "…")
             state.hotspotError != null -> state.hotspotError
             ip != null -> getString(R.string.network_ok, ip, Config.SERVER_PORT)
@@ -282,11 +322,14 @@ class MainActivity : AppCompatActivity() {
             binding.authorizeCheck.setOnCheckedChangeListener { _, checked -> app.setAuthorized(checked) }
         }
 
-        // QR para conectarse a la red Wi-Fi del kiosko.
-        val hotspot = state.hotspot
+        // QR para conectarse a la red: la del evento (@ETU26) o la del hotspot del kiosko.
+        val hotspot = if (state.networkMode == NetworkMode.EVENT_WIFI) EventWifi.info else state.hotspot
         if (hotspot != null && hotspot != shownHotspot) {
             binding.wifiQr.setImageBitmap(QrCode.create(hotspot.wifiQrText(), 500))
-            binding.wifiText.text = getString(R.string.wifi_instructions, hotspot.ssid, hotspot.password)
+            binding.wifiText.text = getString(
+                if (state.networkMode == NetworkMode.EVENT_WIFI) R.string.wifi_instructions_event else R.string.wifi_instructions,
+                hotspot.ssid, hotspot.password,
+            )
         }
         shownHotspot = hotspot
         binding.wifiRow.visibility = if (hotspot != null) View.VISIBLE else View.GONE
