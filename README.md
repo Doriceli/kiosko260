@@ -63,7 +63,7 @@ En la pantalla del kiosko hay un interruptor **"Logos arriba: hashtag.png + marc
 ### Efecto de velocidad (se elige en pantalla)
 | Opción | Qué hace |
 |---|---|
-| ⚡ **Speed ramp** (por defecto) | Rápido (1.6x) → frena suave a cámara lenta (0.3x) en el centro → vuelve a acelerar. El clásico de TikTok/CapCut. |
+| ⚡ **Speed ramp** (por defecto) | Los **primeros 2 s** del video final van rápido (1.6x), luego frena suave a **cámara lenta (0.3x) casi todo el video**, y los **últimos 2 s** vuelven a ir rápido. Ajustable: `RAMP_FAST_SECONDS`, `RAMP_FAST_SPEED`, `RAMP_SLOW_SPEED` en `Config.kt`. |
 | 🌊 **Cámara lenta progresiva** | Empieza normal y va frenando hasta 0.25x. |
 | ✨ **Transición a cámara lenta** | Normal y, a la mitad, pasa suavemente a cámara lenta hasta el final. |
 | 🐢 **Cámara lenta constante** | Todo a 0.5x. |
@@ -165,6 +165,22 @@ Para que el video se acepte solo y la red del kiosko se apague/encienda sin inte
 - Para no perder calidad con ese tamaño, el video se codifica en **HEVC (H.265)**, que da la misma calidad que H.264 con ~40 % menos peso. Para los videos del S23 (1080×1920, 60 fps, ~10 s) queda en **~22–23 MB** a 8–11 Mbps HEVC, equivalente a ~13–18 Mbps en H.264.
 - HEVC se reproduce en iPhone (iOS 11+), celulares Android modernos, WhatsApp, Instagram y TikTok. Si la tablet no tiene codificador HEVC, se usa H.264 automáticamente (respetando los 25 MB). Para forzar H.264: `PREFER_HEVC = false`.
 - Si el codificador se pasa del límite, la app vuelve a codificar una vez con un bitrate menor.
+
+## Pantalla de descarga del invitado y dirección corta
+
+- El botón de descarga está **arriba del video**:
+  - antes de tocarlo: **turquesa**, con flecha hacia abajo y la leyenda **"Descarga aquí"**;
+  - al tocarlo: **rojo tenue**, **"Descargando… 45 %"** con barra de avance;
+  - al terminar: **"✅ ¡Listo! Toca para descargar de nuevo"**.
+- Cada video tiene una **dirección corta** para quien no puede escanear, que se ve grande en la tablet: `192.168.1.20:8080/K7P2` (4 caracteres sin letras confusas). Se escribe tal cual en el navegador del celular. El QR usa esa misma dirección (QR más simple y fácil de leer).
+- En la tablet, el **QR de descarga** es más grande, con marco azul eléctrico grueso y la leyenda **"📲 Escanea para descargar"**; el QR del Wi-Fi es más pequeño y a su lado se ven **en grande la red y la clave**.
+- La barra de "Editando…" es gruesa, azul eléctrico y muestra el porcentaje.
+- Arriba de la app queda fijo el nombre **Kiosko 360** (también es el nombre del ícono).
+
+## Eventos (nombre y contador por evento)
+
+- Debajo de **"Videos hoy"** está el campo **Nombre del evento**; a su lado, el **contador del evento** y el botón **↺ Reiniciar** (reinicio solo manual, con confirmación).
+- Cada video lleva el evento y su número en el nombre del archivo: `Boda-Ana-y-Luis_007_20261015183005aZ3k.mp4`.
 
 ## Autorización para redes sociales
 
