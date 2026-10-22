@@ -102,12 +102,8 @@ class MainActivity : AppCompatActivity() {
         binding.autoSwitch.setOnCheckedChangeListener { _, checked ->
             if (checked) ensurePermissionAndWatch() else stopWatcher()
         }
-        binding.hashtag.text = app.hashtag
         binding.hashtagInput.setText(app.hashtag)
-        binding.hashtagInput.doAfterTextChanged { text ->
-            app.hashtag = text?.toString().orEmpty()
-            binding.hashtag.text = app.hashtag
-        }
+        binding.hashtagInput.doAfterTextChanged { text -> app.hashtag = text?.toString().orEmpty() }
         binding.eventNameInput.setText(app.eventName)
         binding.eventNameInput.doAfterTextChanged { text -> app.eventName = text?.toString().orEmpty() }
         binding.resetEventButton.setOnClickListener { confirmEventReset() }
@@ -296,8 +292,11 @@ class MainActivity : AppCompatActivity() {
         binding.counter.text = getString(R.string.counter_today, state.todayCount)
         binding.eventCounter.text = getString(R.string.event_counter, state.eventCount)
 
-        binding.progress.visibility = if (state.progress != null) View.VISIBLE else View.GONE
-        binding.progress.progress = state.progress ?: 0
+        val editing = state.progress != null
+        binding.progress.visibility = if (editing) View.VISIBLE else View.GONE
+        binding.progressText.visibility = if (editing) View.VISIBLE else View.GONE
+        binding.progress.setProgressCompat(state.progress ?: 0, true)
+        binding.progressText.text = getString(R.string.editing_progress, state.progress ?: 0)
 
         val current = state.current
         if (current != null && current.id + current.url != shownVideoId) {
@@ -306,10 +305,12 @@ class MainActivity : AppCompatActivity() {
             binding.previewLabel.text = current.label
             if (current.url != null) {
                 binding.qr.setImageBitmap(QrCode.create(current.url))
-                binding.url.text = current.url
+                // Sin "http://": así es más corto de escribir (el navegador lo completa).
+                binding.url.text = current.url.removePrefix("http://")
+                binding.urlBox.visibility = View.VISIBLE
             } else {
                 binding.qr.setImageDrawable(null)
-                binding.url.setText(R.string.network_missing)
+                binding.urlBox.visibility = View.GONE
             }
             binding.resultRow.visibility = View.VISIBLE
         }
@@ -326,10 +327,12 @@ class MainActivity : AppCompatActivity() {
         val hotspot = if (state.networkMode == NetworkMode.EVENT_WIFI) EventWifi.info else state.hotspot
         if (hotspot != null && hotspot != shownHotspot) {
             binding.wifiQr.setImageBitmap(QrCode.create(hotspot.wifiQrText(), 500))
-            binding.wifiText.text = getString(
-                if (state.networkMode == NetworkMode.EVENT_WIFI) R.string.wifi_instructions_event else R.string.wifi_instructions,
-                hotspot.ssid, hotspot.password,
+            binding.wifiTitle.setText(
+                if (state.networkMode == NetworkMode.EVENT_WIFI) R.string.wifi_title_event else R.string.wifi_title_hotspot,
             )
+            binding.wifiSsid.text = getString(R.string.wifi_ssid, hotspot.ssid)
+            binding.wifiPassword.text = getString(R.string.wifi_password, hotspot.password)
+            binding.wifiText.setText(R.string.wifi_hint)
         }
         shownHotspot = hotspot
         binding.wifiRow.visibility = if (hotspot != null) View.VISIBLE else View.GONE

@@ -16,6 +16,16 @@ object Config {
     /** Opacidad del sticker: 255 = sólido, 200 ≈ 80 %. */
     const val HASHTAG_ALPHA = 215
 
+    /**
+     * Speed ramp: los primeros y los últimos [RAMP_FAST_SECONDS] del video FINAL van a
+     * [RAMP_FAST_SPEED]; el resto, a [RAMP_SLOW_SPEED] (cámara lenta). El cambio de velocidad
+     * dura [RAMP_TRANSITION_SECONDS] (del original) para que se vea suave.
+     */
+    const val RAMP_FAST_SECONDS = 2f
+    const val RAMP_FAST_SPEED = 1.6f
+    const val RAMP_SLOW_SPEED = 0.3f
+    const val RAMP_TRANSITION_SECONDS = 0.3f
+
     /** Efecto de velocidad que se usa al abrir la app (se puede cambiar en pantalla). */
     val DEFAULT_SPEED_EFFECT = SpeedEffect.SPEED_RAMP
 

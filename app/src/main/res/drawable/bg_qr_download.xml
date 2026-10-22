@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Marco del QR de descarga: más grueso que el del QR de Wi-Fi para que llame más la atención. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@color/blanco" />
+    <stroke android:width="8dp" android:color="@color/azul_electrico" />
+    <corners android:radius="24dp" />
+</shape>

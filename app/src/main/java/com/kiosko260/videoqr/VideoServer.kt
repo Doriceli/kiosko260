@@ -29,6 +29,8 @@ class VideoServer(
             path.startsWith("/v/") -> page(path.removePrefix("/v/"))
             path.startsWith("/f/") -> file(path.removePrefix("/f/").removeSuffix(".mp4"), session)
             path.startsWith("/t/") -> thumbnail(path.removePrefix("/t/").removeSuffix(".jpg"))
+            // Dirección corta para escribir a mano: http://IP:8080/K7P2
+            SHORT_CODE.matches(path) -> library.idForCode(path.trim('/'))?.let(::page) ?: notFound()
             else -> notFound()
         }
     }
@@ -40,6 +42,7 @@ class VideoServer(
 
     private fun page(id: String): Response {
         resolve(id) ?: return notFound()
+        // Ojo: es un string de Kotlin; en el JavaScript no se usan plantillas con "$".
         val html = """
             <!doctype html>
             <html lang="es"><head>
@@ -49,21 +52,82 @@ class VideoServer(
               body{margin:0;font-family:system-ui,sans-serif;color:#fff;text-align:center;padding:16px;
                    box-sizing:border-box;min-height:100vh;
                    background:linear-gradient(160deg,#FB3A4B 0%,#F54945 20%,#F178AF 55%,#E47493 75%,#800080 100%)}
-              h1{margin:8px 0 0;font-size:40px;font-weight:900;letter-spacing:1px;
+              h1{margin:6px 0 0;font-size:36px;font-weight:900;letter-spacing:1px;
                  text-shadow:0 3px 0 #800080,0 6px 18px rgba(0,0,0,.25);transform:rotate(-3deg)}
-              h2{font-weight:700;margin:6px 0 16px}
+              h2{font-weight:700;margin:6px 0 14px}
               video{width:100%;max-width:420px;aspect-ratio:9/16;object-fit:cover;border-radius:22px;
                     background:#000;border:4px solid #fff;box-shadow:0 10px 30px rgba(0,0,0,.3)}
-              a.btn{display:block;max-width:420px;margin:18px auto;padding:18px;border-radius:999px;
-                    background:#7DF9FF;color:#800080;font-size:21px;font-weight:900;text-decoration:none;
-                    border:3px solid #fff;box-shadow:0 6px 0 #800080}
-              p{font-size:15px;max-width:420px;margin:8px auto;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+              .btn{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;gap:12px;
+                   max-width:420px;margin:0 auto 18px;padding:20px 16px;border-radius:999px;border:4px solid #fff;
+                   font-size:23px;font-weight:900;text-decoration:none;color:#fff;
+                   box-shadow:0 7px 0 rgba(0,0,0,.25);transition:background .25s;
+                   -webkit-tap-highlight-color:transparent}
+              .btn .fill{position:absolute;left:0;top:0;bottom:0;width:0;background:rgba(255,255,255,.35);transition:width .2s}
+              .btn span,.btn svg{position:relative}
+              .btn svg{width:30px;height:30px;flex:none}
+              .idle{background:#1CC9B9}            /* turquesa */
+              .loading{background:#F28B8B}         /* rojo tenue */
+              .done{background:#1CC9B9}
+              .bar{height:10px;max-width:420px;margin:-8px auto 18px;border-radius:99px;background:rgba(255,255,255,.3);overflow:hidden;display:none}
+              .bar div{height:100%;width:0;background:#fff;transition:width .2s}
+              p{font-size:15px;max-width:420px;margin:12px auto;text-shadow:0 1px 2px rgba(0,0,0,.25)}
             </style></head><body>
             <h1>${hashtag()}</h1>
             <h2>¡Tu video está listo! 🎬</h2>
+            <a id="dl" class="btn idle" href="/f/$id.mp4?dl=1" download="video-$id.mp4">
+              <div class="fill" id="fill"></div>
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3v13"/><path d="M6 11l6 6 6-6"/><path d="M4 21h16"/></svg>
+              <span id="label">Descarga aquí</span>
+            </a>
+            <div class="bar" id="bar"><div id="barfill"></div></div>
             <video src="/f/$id.mp4" poster="/t/$id.jpg" controls playsinline loop></video>
-            <a class="btn" href="/f/$id.mp4?dl=1" download="video-$id.mp4">⬇️ Descargar video</a>
-            <p>Súbelo como Reel o TikTok 🔥 Ábrelo desde tu galería (o en iPhone desde Archivos &rarr; Descargas &rarr; Compartir &rarr; Guardar video) y etiqueta ${hashtag()}</p>
+            <p>Súbelo como Reel o TikTok 🔥 Ábrelo desde tu galería (en iPhone: Archivos &rarr; Descargas &rarr; Compartir &rarr; Guardar video) y etiqueta ${hashtag()}</p>
+            <script>
+            (function(){
+              var btn=document.getElementById('dl'), label=document.getElementById('label'),
+                  fill=document.getElementById('fill'), bar=document.getElementById('bar'),
+                  barfill=document.getElementById('barfill'), busy=false;
+              function show(state, pct){
+                btn.className='btn '+state;
+                if(state==='idle'){label.textContent='Descarga aquí';fill.style.width='0';bar.style.display='none';}
+                if(state==='loading'){
+                  label.textContent=pct>=0?('Descargando... '+pct+'%'):'Descargando...';
+                  fill.style.width=(pct>=0?pct:0)+'%'; bar.style.display='block'; barfill.style.width=(pct>=0?pct:0)+'%';
+                }
+                if(state==='done'){label.textContent='✅ ¡Listo! Toca para descargar de nuevo';fill.style.width='0';bar.style.display='none';}
+              }
+              btn.addEventListener('click', function(e){
+                // Navegadores sin soporte: descarga normal del enlace.
+                if(!window.fetch||!window.ReadableStream||!window.URL||!window.Blob) return;
+                e.preventDefault();
+                if(busy) return;
+                busy=true; show('loading',0);
+                fetch(btn.getAttribute('href')).then(function(r){
+                  if(!r.ok||!r.body) throw new Error('http');
+                  var total=parseInt(r.headers.get('Content-Length')||'0',10), got=0, chunks=[], reader=r.body.getReader();
+                  function pump(){
+                    return reader.read().then(function(x){
+                      if(x.done) return new Blob(chunks,{type:'video/mp4'});
+                      chunks.push(x.value); got+=x.value.length;
+                      show('loading', total ? Math.min(99, Math.round(got*100/total)) : -1);
+                      return pump();
+                    });
+                  }
+                  return pump();
+                }).then(function(blob){
+                  var url=URL.createObjectURL(blob), a=document.createElement('a');
+                  a.href=url; a.download=btn.getAttribute('download');
+                  document.body.appendChild(a); a.click(); a.remove();
+                  setTimeout(function(){URL.revokeObjectURL(url);},60000);
+                  busy=false; show('done');
+                }).catch(function(){
+                  busy=false; show('idle');
+                  window.location.href=btn.getAttribute('href');
+                });
+              });
+            })();
+            </script>
             </body></html>
         """.trimIndent()
         return newFixedLengthResponse(Response.Status.OK, "text/html; charset=utf-8", html)
@@ -140,5 +204,6 @@ class VideoServer(
 
     private companion object {
         const val MIME_MP4 = "video/mp4"
+        val SHORT_CODE = Regex("^/[A-Za-z0-9]{4}/?$")
     }
 }

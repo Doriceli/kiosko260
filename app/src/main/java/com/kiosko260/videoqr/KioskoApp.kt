@@ -200,7 +200,10 @@ class KioskoApp : Application() {
 
     /** Enlace de descarga. Se arma con la IP local del kiosko: no se consulta nada en internet. */
     fun shareUrl(id: String): String? =
-        NetworkUtils.localIpAddress(preferHotspot = hotspot.isActive)?.let { "http://$it:${Config.SERVER_PORT}/v/$id" }
+        NetworkUtils.localIpAddress(preferHotspot = hotspot.isActive)?.let {
+            // Dirección corta (fácil de escribir y QR menos denso): http://IP:8080/K7P2
+            "http://$it:${Config.SERVER_PORT}/${library.shortCode(id)}"
+        }
 
     /** Crea la red Wi-Fi propia (MainActivity ya pidió los permisos). */
     fun startOwnNetwork() = hotspot.start()

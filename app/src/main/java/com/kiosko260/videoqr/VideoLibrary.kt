@@ -37,6 +37,24 @@ class VideoLibrary(private val context: Context) {
     val thumbnailsDir: File = File(context.getExternalFilesDir(null), "miniaturas").apply { mkdirs() }
 
     private val numbers = context.getSharedPreferences("numeros", Context.MODE_PRIVATE)
+    private val codes = context.getSharedPreferences("codigos", Context.MODE_PRIVATE)
+
+    /**
+     * Código corto de 4 caracteres para el video (p. ej. `K7P2`), para escribir la dirección a mano:
+     * `192.168.1.20:8080/K7P2`. Sin letras que se confunden (0/O, 1/I/L).
+     */
+    @Synchronized
+    fun shortCode(id: String): String {
+        codes.getString("id:$id", null)?.let { return it }
+        var code: String
+        do {
+            code = (1..4).map { CODE_CHARS.random() }.joinToString("")
+        } while (codes.contains("c:$code"))
+        codes.edit().putString("id:$id", code).putString("c:$code", id).apply()
+        return code
+    }
+
+    fun idForCode(code: String): String? = codes.getString("c:${code.uppercase()}", null)
 
     /**
      * Id del video, que también es el nombre del archivo:
@@ -108,6 +126,7 @@ class VideoLibrary(private val context: Context) {
 
     companion object {
         val ID_PATTERN = Regex("^[A-Za-z0-9_-]{6,80}$")
+        private const val CODE_CHARS = "23456789ABCDEFGHJKMNPQRSTUVWXYZ"
 
         /** (evento)_(número)_(yyyyMMddHHmmss)xxxx, con evento y número opcionales. */
         private val NAME_PARTS = Regex("""^(?:([A-Za-z0-9-]+)_(\d+)_)?(\d{14})[A-Za-z0-9]{4}$""")

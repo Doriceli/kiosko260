@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Datos importantes (red, clave, dirección): fondo morado sólido, letras grandes blancas. No es un botón. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="#E6800080" />
+    <corners android:radius="18dp" />
+</shape>

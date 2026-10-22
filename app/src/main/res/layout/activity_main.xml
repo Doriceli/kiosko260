@@ -17,11 +17,11 @@
         android:paddingEnd="20dp">
 
         <TextView
-            android:id="@+id/hashtag"
+            android:id="@+id/appTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:rotation="-3"
+            android:text="@string/app_name"
             android:shadowColor="@color/morado"
             android:shadowDy="4"
             android:shadowRadius="1"
@@ -146,15 +146,27 @@
                     android:textSize="22sp"
                     android:textStyle="bold" />
 
-                <ProgressBar
+                <!-- Barra de edición: gruesa, redondeada y en azul eléctrico -->
+                <com.google.android.material.progressindicator.LinearProgressIndicator
                     android:id="@+id/progress"
-                    style="?android:attr/progressBarStyleHorizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="12dp"
                     android:max="100"
-                    android:progressBackgroundTint="@color/blanco_suave"
-                    android:progressTint="@color/azul_electrico"
+                    android:visibility="gone"
+                    app:indicatorColor="@color/azul_electrico"
+                    app:trackColor="#55FFFFFF"
+                    app:trackCornerRadius="12dp"
+                    app:trackThickness="22dp" />
+
+                <TextView
+                    android:id="@+id/progressText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textColor="@color/blanco"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
                     android:visibility="gone" />
 
                 <Button
@@ -193,21 +205,58 @@
 
                     <ImageView
                         android:id="@+id/wifiQr"
-                        android:layout_width="130dp"
-                        android:layout_height="130dp"
+                        android:layout_width="115dp"
+                        android:layout_height="115dp"
                         android:background="@drawable/bg_qr"
                         android:contentDescription="@string/wifi_qr_description"
                         android:padding="6dp"
                         android:scaleType="fitCenter" />
 
-                    <TextView
-                        android:id="@+id/wifiText"
+                    <!-- Datos de la red, grandes, para quien no puede escanear el QR -->
+                    <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="12dp"
                         android:layout_weight="1"
-                        android:textColor="@color/blanco"
-                        android:textSize="15sp" />
+                        android:background="@drawable/bg_info_strong"
+                        android:orientation="vertical"
+                        android:padding="12dp">
+
+                        <TextView
+                            android:id="@+id/wifiTitle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/blanco"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/wifiSsid"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@color/blanco"
+                            android:textIsSelectable="true"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/wifiPassword"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/azul_electrico"
+                            android:textIsSelectable="true"
+                            android:textSize="24sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/wifiText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:textColor="@color/blanco_suave"
+                            android:textSize="13sp" />
+                    </LinearLayout>
                 </LinearLayout>
 
                 <Button
@@ -288,25 +337,62 @@
                         android:gravity="center_horizontal"
                         android:orientation="vertical">
 
-                        <!-- QR más pequeño que la vista previa (≈ 60 % de su altura) -->
-                        <ImageView
-                            android:id="@+id/qr"
-                            android:layout_width="180dp"
-                            android:layout_height="180dp"
-                            android:background="@drawable/bg_qr"
-                            android:contentDescription="@string/qr_description"
-                            android:padding="8dp"
-                            android:scaleType="fitCenter" />
-
+                        <!-- QR de descarga: más grande y llamativo que el de Wi-Fi -->
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
+                            android:layout_marginBottom="6dp"
+                            android:background="@drawable/bg_info_strong"
+                            android:paddingStart="14dp"
+                            android:paddingTop="6dp"
+                            android:paddingEnd="14dp"
+                            android:paddingBottom="6dp"
                             android:text="@string/scan_me"
                             android:textColor="@color/blanco"
-                            android:textSize="16sp"
+                            android:textSize="20sp"
                             android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/qr"
+                            android:layout_width="235dp"
+                            android:layout_height="235dp"
+                            android:background="@drawable/bg_qr_download"
+                            android:contentDescription="@string/qr_description"
+                            android:elevation="8dp"
+                            android:padding="12dp"
+                            android:scaleType="fitCenter" />
                     </LinearLayout>
+                </LinearLayout>
+
+                <!-- Dirección corta para quien no puede escanear el QR -->
+                <LinearLayout
+                    android:id="@+id/urlBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:background="@drawable/bg_info_strong"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/url_label"
+                        android:textColor="@color/blanco"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/url"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="@color/azul_electrico"
+                        android:textIsSelectable="true"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
 
                 <CheckBox
@@ -326,14 +412,6 @@
                     android:visibility="gone" />
 
 
-                <TextView
-                    android:id="@+id/url"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textColor="@color/blanco_suave"
-                    android:textIsSelectable="true"
-                    android:textSize="14sp" />
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/autoSwitch"

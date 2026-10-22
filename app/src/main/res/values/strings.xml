@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Kiosko Video QR</string>
+    <string name="app_name">Kiosko 360</string>
     <string name="tab_live">🎬 En vivo</string>
     <string name="tab_history">📁 Procesados</string>
     <string name="qr_description">Código QR para descargar el video</string>
@@ -11,7 +11,6 @@
     <string name="hashtag_label">Hashtag del video (abajo a la derecha)</string>
     <string name="hashtag_hint">#etu2026 (vacío = sin hashtag)</string>
     <string name="wifi_qr_description">QR para conectarse a la red Wi-Fi del kiosko</string>
-    <string name="wifi_instructions">1️⃣ Escanea este QR para conectarte a la red del kiosko\nRed: %1$s\nClave: %2$s\n2️⃣ Luego escanea el QR del video.\nSi no abre, apaga los datos móviles un momento.</string>
     <string name="network_own">📶 Red del kiosko activa: %1$s (IP %2$s) — sin internet</string>
     <string name="mode_receive">📥 Listo para recibir por Quick Share (red del kiosko apagada)</string>
     <string name="mode_share">📶 Red del kiosko encendida: escanea el QR</string>
@@ -19,7 +18,7 @@
     <string name="receive_button">👉 📥 Recibir (Quick Share)</string>
     <string name="share_button">👉 📶 Mostrar QR</string>
     <string name="notification_access">🔔 Activar recepción automática de Quick Share</string>
-    <string name="notification_access_help">En la lista, activa \"Kiosko Video QR\" y vuelve a la app.</string>
+    <string name="notification_access_help">En la lista, activa \"Kiosko 360\" y vuelve a la app.</string>
     <string name="event_label">Nombre del evento</string>
     <string name="event_hint">Ej.: Boda Ana y Luis (va en el nombre del video)</string>
     <string name="event_counter">Evento: %1$d</string>
@@ -37,14 +36,20 @@
     <string name="network_missing_event">⚠️ Sin red: conecta la tablet a %1$s para que el QR funcione.</string>
     <string name="wifi_turn_on">Enciende el Wi-Fi de la tablet y vuelve a tocar \"Conectar\".</string>
     <string name="wifi_manual">Conéctate a mano: red %1$s, clave %2$s</string>
-    <string name="wifi_instructions_event">1️⃣ Escanea este QR para conectarte a la red del evento\nRed: %1$s\nClave: %2$s\n2️⃣ Luego escanea el QR del video.\nSi no abre, apaga los datos móviles un momento.</string>
+    <string name="url_label">¿No puedes escanear? Escribe en el navegador de tu celular:</string>
+    <string name="editing_progress">Editando… %1$d%%</string>
+    <string name="wifi_title_event">1️⃣ Conéctate al Wi-Fi del evento</string>
+    <string name="wifi_title_hotspot">1️⃣ Conéctate al Wi-Fi del kiosko</string>
+    <string name="wifi_ssid">Red: %1$s</string>
+    <string name="wifi_password">Clave: %1$s</string>
+    <string name="wifi_hint">2️⃣ Luego escanea el QR del video. Si no abre, apaga los datos móviles un momento.</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>
     <string name="music_missing">No se encontraron canciones. Copia los .mp3 en Almacenamiento interno &gt; Download &gt; INSUMOS y da permiso de \"Música y audio\" a la app.</string>
     <string name="counter_today">Videos hoy: %1$d</string>
     <string name="preview_description">Vista previa del video a compartir</string>
-    <string name="scan_me">Escanéame 📲</string>
+    <string name="scan_me">📲 Escanea para descargar</string>
     <string name="pick_video">👉 🎞️ Elegir un video manualmente</string>
     <string name="history_count">%1$d videos en Download/PROCESADOS · toca uno para mostrar su QR</string>
     <string name="history_empty">Todavía no hay videos procesados.</string>
