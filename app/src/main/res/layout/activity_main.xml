@@ -395,6 +395,43 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
+                <!-- Opción extra: compartir el video con Quick Share (QR / enlace de Samsung) -->
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/quickShareSwitch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/quick_share_switch"
+                    android:textColor="@color/blanco"
+                    android:textStyle="bold"
+                    android:visibility="gone" />
+
+                <LinearLayout
+                    android:id="@+id/quickShareBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <Button
+                        android:id="@+id/quickShareButton"
+                        style="@style/KioskButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/quick_share_button" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:background="@drawable/bg_card"
+                        android:padding="10dp"
+                        android:text="@string/quick_share_hint"
+                        android:textColor="@color/blanco"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
                 <CheckBox
                     android:id="@+id/authorizeCheck"
                     android:layout_width="match_parent"

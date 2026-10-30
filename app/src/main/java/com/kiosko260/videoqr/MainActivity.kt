@@ -108,6 +108,12 @@ class MainActivity : AppCompatActivity() {
         binding.eventNameInput.doAfterTextChanged { text -> app.eventName = text?.toString().orEmpty() }
         binding.resetEventButton.setOnClickListener { confirmEventReset() }
         binding.authorizeCheck.setOnCheckedChangeListener { _, checked -> app.setAuthorized(checked) }
+        binding.quickShareSwitch.isChecked = app.showQuickShareOption
+        binding.quickShareSwitch.setOnCheckedChangeListener { _, checked ->
+            app.showQuickShareOption = checked
+            render(app.state.value)
+        }
+        binding.quickShareButton.setOnClickListener { shareWithQuickShare() }
         binding.radioEventWifi.text = getString(R.string.network_mode_event_wifi, Config.EVENT_WIFI_SSID)
         if (app.networkMode == NetworkMode.EVENT_WIFI) binding.radioEventWifi.isChecked = true
         else binding.radioHotspot.isChecked = true
@@ -194,6 +200,16 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, getString(R.string.wifi_manual, Config.EVENT_WIFI_SSID, Config.EVENT_WIFI_PASSWORD), Toast.LENGTH_LONG).show()
                 runCatching { startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) }
             }
+    }
+
+    /** Abre Quick Share con el video en pantalla (ahí se elige QR, enlace o dispositivo cercano). */
+    private fun shareWithQuickShare() {
+        val current = app.state.value.current ?: return
+        val video = app.library.videoFile(current.id).takeIf { it.isFile } ?: return
+        // En modo hotspot, Quick Share necesita el Wi-Fi: se apaga la red del kiosko.
+        if (app.useOwnNetwork) app.receiveMode()
+        runCatching { startActivity(QuickShareSender.intentFor(this, video)) }
+            .onFailure { Toast.makeText(this, R.string.quick_share_error, Toast.LENGTH_LONG).show() }
     }
 
     /** Reinicio manual del contador del evento, con confirmación para no borrarlo por accidente. */
@@ -314,6 +330,11 @@ class MainActivity : AppCompatActivity() {
             }
             binding.resultRow.visibility = View.VISIBLE
         }
+
+        // Opción extra de Quick Share, debajo del video.
+        binding.quickShareSwitch.visibility = if (current != null) View.VISIBLE else View.GONE
+        binding.quickShareBox.visibility =
+            if (current != null && binding.quickShareSwitch.isChecked) View.VISIBLE else View.GONE
 
         // Casilla de autorización del video en pantalla (sin disparar el listener).
         binding.authorizeCheck.visibility = if (current != null) View.VISIBLE else View.GONE

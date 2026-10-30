@@ -92,6 +92,11 @@ class KioskoApp : Application() {
         get() = prefs.getString(KEY_HASHTAG, null) ?: Config.HASHTAG
         set(value) = prefs.edit().putString(KEY_HASHTAG, value.trim()).apply()
 
+    /** Mostrar la opción extra "Compartir con Quick Share" debajo del video (se recuerda). */
+    var showQuickShareOption: Boolean
+        get() = prefs.getBoolean(KEY_QUICK_SHARE_OPTION, false)
+        set(value) = prefs.edit().putBoolean(KEY_QUICK_SHARE_OPTION, value).apply()
+
     /** Nombre del evento actual: se agrega al nombre del archivo de cada video. */
     var eventName: String
         get() = prefs.getString(KEY_EVENT_NAME, "").orEmpty()
@@ -376,6 +381,7 @@ class KioskoApp : Application() {
         const val KEY_LAYOUT = "diseno"
         const val KEY_HASHTAG = "hashtag"
         const val KEY_EVENT_NAME = "evento_nombre"
+        const val KEY_QUICK_SHARE_OPTION = "opcion_quick_share"
         const val KEY_EVENT_COUNT = "evento_contador"
         const val KEY_NETWORK_MODE = "modo_red"
     }

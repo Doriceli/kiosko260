@@ -43,6 +43,10 @@
     <string name="wifi_ssid">Red: %1$s</string>
     <string name="wifi_password">Clave: %1$s</string>
     <string name="wifi_hint">2️⃣ Luego escanea el QR del video. Si no abre, apaga los datos móviles un momento.</string>
+    <string name="quick_share_switch">Opción extra: compartir con Quick Share (QR / enlace de Samsung)</string>
+    <string name="quick_share_button">👉 📤 Compartir este video con Quick Share</string>
+    <string name="quick_share_hint">Se abre Quick Share con el video listo. Ahí elige:\n• \"Código QR\" o \"Copiar enlace\" (Samsung lo sube a su nube: necesita internet).\n• Un dispositivo cercano (funciona sin internet).</string>
+    <string name="quick_share_error">No se pudo abrir Quick Share en este equipo.</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>

@@ -58,6 +58,12 @@ object Config {
      */
     const val PREFER_HEVC = true
 
+    /**
+     * Segundos entre fotogramas clave. Con 3 s (en vez de 1 s) el codificador gasta menos en
+     * fotogramas completos y la imagen se ve más nítida con el mismo peso.
+     */
+    const val KEYFRAME_INTERVAL_SECONDS = 3f
+
     /** Nunca bajar de este bitrate (aunque el video sea muy largo y pase del límite). */
     const val MIN_VIDEO_BITRATE = 4_000_000
 

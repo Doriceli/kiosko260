@@ -72,8 +72,11 @@ class VideoProcessor(private val context: Context) {
     }
 
     private companion object {
-        /** Margen para que el archivo quede por debajo del límite aunque el codificador se pase un poco. */
-        const val SIZE_SAFETY = 0.9
+        /**
+         * Parte del límite de tamaño que se usa para el video (el resto es margen por si el
+         * codificador se pasa un poco; si se pasa del límite, se recodifica con menos bitrate).
+         */
+        const val SIZE_SAFETY = 0.96
         /** Bitrate de audio AAC que usa Media3 por defecto (128 kbps). */
         const val AUDIO_BITRATE = 128 * 1024
     }
@@ -132,7 +135,7 @@ class VideoProcessor(private val context: Context) {
         // una vez con un bitrate proporcionalmente menor.
         val size = result.length()
         if (size > maxBytes) {
-            bitrate = (bitrate * (maxBytes.toDouble() / size) * 0.92).toInt().coerceAtLeast(Config.MIN_VIDEO_BITRATE)
+            bitrate = (bitrate * (maxBytes.toDouble() / size) * 0.95).toInt().coerceAtLeast(Config.MIN_VIDEO_BITRATE)
             result = withContext(Dispatchers.Main) { export(composition(), bitrate, output, onProgress) }
         }
         return result
@@ -190,7 +193,11 @@ class VideoProcessor(private val context: Context) {
                 .setEncoderFactory(
                     DefaultEncoderFactory.Builder(context)
                         .setRequestedVideoEncoderSettings(
-                            VideoEncoderSettings.Builder().setBitrate(bitrate).build()
+                            VideoEncoderSettings.Builder()
+                                .setBitrate(bitrate)
+                                // Menos fotogramas clave = más bits para cada imagen = mejor calidad al mismo peso.
+                                .setiFrameIntervalSeconds(Config.KEYFRAME_INTERVAL_SECONDS)
+                                .build()
                         )
                         .setEnableFallback(true)
                         .build()

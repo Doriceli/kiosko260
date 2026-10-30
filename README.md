@@ -165,6 +165,7 @@ Para que el video se acepte solo y la red del kiosko se apague/encienda sin inte
 - Para no perder calidad con ese tamaño, el video se codifica en **HEVC (H.265)**, que da la misma calidad que H.264 con ~40 % menos peso. Para los videos del S23 (1080×1920, 60 fps, ~10 s) queda en **~22–23 MB** a 8–11 Mbps HEVC, equivalente a ~13–18 Mbps en H.264.
 - HEVC se reproduce en iPhone (iOS 11+), celulares Android modernos, WhatsApp, Instagram y TikTok. Si la tablet no tiene codificador HEVC, se usa H.264 automáticamente (respetando los 25 MB). Para forzar H.264: `PREFER_HEVC = false`.
 - Si el codificador se pasa del límite, la app vuelve a codificar una vez con un bitrate menor.
+- Calidad mejorada: se usa ~96 % del límite para el video (antes 90 %) y un fotograma clave cada 3 s (`KEYFRAME_INTERVAL_SECONDS`), lo que da más detalle con el mismo peso. Un video del S23 queda en ~24 MB.
 
 ## Pantalla de descarga del invitado y dirección corta
 
@@ -181,6 +182,14 @@ Para que el video se acepte solo y la red del kiosko se apague/encienda sin inte
 
 - Debajo de **"Videos hoy"** está el campo **Nombre del evento**; a su lado, el **contador del evento** y el botón **↺ Reiniciar** (reinicio solo manual, con confirmación).
 - Cada video lleva el evento y su número en el nombre del archivo: `Boda-Ana-y-Luis_007_20261015183005aZ3k.mp4`.
+
+## Opción extra: compartir con Quick Share (QR / enlace de Samsung)
+
+- Debajo del video hay un interruptor **"Opción extra: compartir con Quick Share"**. Al activarlo aparece el botón **👉 📤 Compartir este video con Quick Share** (la elección se recuerda).
+- El botón abre **Quick Share de la Galaxy Tab** con el video ya cargado. Ahí puedes elegir:
+  - **Código QR** o **Copiar enlace**: los genera Samsung subiendo el video a su nube, así que **necesitan internet** (con la red @ETU26 sin internet no funcionarán);
+  - un **dispositivo cercano**: funciona sin internet (celulares con Quick Share).
+- Android no permite que otra app lea el QR o el enlace que crea Quick Share, por eso se abre su propia ventana en lugar de copiarlos dentro de Kiosko 360. El QR y la dirección corta de Kiosko 360 siguen funcionando igual.
 
 ## Autorización para redes sociales
 

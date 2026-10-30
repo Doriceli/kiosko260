@@ -16,6 +16,14 @@
     <!-- Servidor local para la descarga por QR. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Android 11+: poder ver si Quick Share está instalado para abrirlo directo. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="video/*" />
+        </intent>
+    </queries>
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
     <!-- Red Wi-Fi propia del kiosko sin internet (LocalOnlyHotspot). -->
@@ -68,5 +76,16 @@
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
+
+        <!-- Permite pasar los videos de Download/PROCESADOS a Quick Share. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>
