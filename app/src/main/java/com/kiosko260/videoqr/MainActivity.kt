@@ -114,6 +114,7 @@ class MainActivity : AppCompatActivity() {
             render(app.state.value)
         }
         binding.quickShareButton.setOnClickListener { shareWithQuickShare() }
+        binding.regenerateQrButton.setOnClickListener { regenerateQr() }
         binding.radioEventWifi.text = getString(R.string.network_mode_event_wifi, Config.EVENT_WIFI_SSID)
         if (app.networkMode == NetworkMode.EVENT_WIFI) binding.radioEventWifi.isChecked = true
         else binding.radioHotspot.isChecked = true
@@ -200,6 +201,21 @@ class MainActivity : AppCompatActivity() {
                 Toast.makeText(this, getString(R.string.wifi_manual, Config.EVENT_WIFI_SSID, Config.EVENT_WIFI_PASSWORD), Toast.LENGTH_LONG).show()
                 runCatching { startActivity(Intent(Settings.ACTION_WIFI_SETTINGS)) }
             }
+    }
+
+    /** Vuelve a leer la red, arranca el servidor si hacía falta y redibuja el QR del video en pantalla. */
+    private fun regenerateQr() {
+        app.startServer()
+        app.refreshNetwork()
+        shownVideoId = null // fuerza a redibujar el QR aunque el enlace sea el mismo
+        val state = app.state.value
+        render(state)
+        val url = state.current?.url
+        Toast.makeText(
+            this,
+            if (url != null) getString(R.string.qr_regenerated, url.removePrefix("http://")) else getString(R.string.qr_no_network),
+            Toast.LENGTH_LONG,
+        ).show()
     }
 
     /** Abre Quick Share con el video en pantalla (ahí se elige QR, enlace o dispositivo cercano). */

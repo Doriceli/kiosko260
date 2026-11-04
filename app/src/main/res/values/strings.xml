@@ -47,6 +47,9 @@
     <string name="quick_share_button">👉 📤 Compartir este video con Quick Share</string>
     <string name="quick_share_hint">Se abre Quick Share con el video listo. Ahí elige:\n• \"Código QR\" o \"Copiar enlace\" (Samsung lo sube a su nube: necesita internet).\n• Un dispositivo cercano (funciona sin internet).</string>
     <string name="quick_share_error">No se pudo abrir Quick Share en este equipo.</string>
+    <string name="regenerate_qr">🔄 Regenerar QR</string>
+    <string name="qr_regenerated">QR regenerado: %1$s</string>
+    <string name="qr_no_network">Sin red: conecta la tablet al Wi-Fi del evento o usa el hotspot.</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>

@@ -130,7 +130,7 @@ class KioskoApp : Application() {
 
     /** Vuelve a leer la IP local (al cambiar de red) y regenera el QR del video en pantalla. */
     fun refreshNetwork() {
-        val ip = NetworkUtils.localIpAddress(preferHotspot = hotspot.isActive)
+        val ip = NetworkUtils.localIpAddress(this, preferHotspot = hotspot.isActive)
         _state.update { it.copy(localIp = ip) }
         refreshCurrentUrl()
     }
@@ -156,12 +156,26 @@ class KioskoApp : Application() {
         watchWifi()
         refreshNetwork()
         startServer()
+        scope.launch { networkWatchdog() }
         scope.launch { processQueue() }
     }
 
     fun enqueue(uri: Uri) {
         _state.update { it.copy(pending = it.pending + 1) }
         queue.trySend(uri)
+    }
+
+    /**
+     * Respaldo cada 5 s: si la IP cambió (p. ej. después de una transferencia de Quick Share) se
+     * regenera el QR, y si el servidor de descargas se detuvo, se vuelve a encender.
+     */
+    private suspend fun networkWatchdog() {
+        while (true) {
+            delay(5_000)
+            if (server?.isAlive != true) startServer()
+            val ip = NetworkUtils.localIpAddress(this, preferHotspot = hotspot.isActive)
+            if (ip != _state.value.localIp) refreshNetwork()
+        }
     }
 
     /** Avisa cuando la tablet se conecta o desconecta de un Wi-Fi (p. ej. @ETU26) para actualizar el QR. */
@@ -205,7 +219,7 @@ class KioskoApp : Application() {
 
     /** Enlace de descarga. Se arma con la IP local del kiosko: no se consulta nada en internet. */
     fun shareUrl(id: String): String? =
-        NetworkUtils.localIpAddress(preferHotspot = hotspot.isActive)?.let {
+        NetworkUtils.localIpAddress(this, preferHotspot = hotspot.isActive)?.let {
             // Dirección corta (fácil de escribir y QR menos denso): http://IP:8080/K7P2
             "http://$it:${Config.SERVER_PORT}/${library.shortCode(id)}"
         }

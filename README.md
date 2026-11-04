@@ -20,6 +20,20 @@ Todo pasa dentro del celular (edición con [Media3 Transformer](https://develope
 
 No necesitas instalar nada más: las librerías (Media3, NanoHTTPD, ZXing) las descarga Gradle solo.
 
+### Versiones del proyecto (actualizadas en noviembre de 2026)
+
+| Componente | Versión |
+|---|---|
+| Android Gradle Plugin | 9.5.0 (Kotlin integrado: ya no se usa el plugin `kotlin-android`) |
+| Gradle | 9.8.2 |
+| compileSdk / targetSdk / minSdk | 37 / 35 / 29 |
+| Media3 (Transformer, Effect) | 1.11.1 |
+| AndroidX core / appcompat / activity / lifecycle / recyclerview | 1.19.1 / 1.8.0 / 1.13.0 / 2.11.0 / 1.4.0 |
+| Material Components | 1.14.0 |
+| Coroutines / Guava / ZXing / NanoHTTPD | 1.11.0 / 33.8.0-android / 3.5.4 / 2.3.1 |
+
+Al abrir el proyecto, Android Studio descargará Gradle 9.8.2 y, si no lo tienes, el **SDK de Android 37** (acepta la instalación cuando lo pida). Usa la versión más reciente de Android Studio.
+
 ## 2. Abrir, compilar e instalar
 
 1. En Android Studio: **File → Open** y elige esta carpeta (`kiosko260`). Espera a que termine "Gradle sync" (la primera vez tarda varios minutos).
@@ -241,6 +255,7 @@ Si algún equipo no detecta automáticamente los videos, hay dos alternativas:
 
 | Problema | Solución |
 |---|---|
+| El QR no abre / apunta a una dirección rara (192.168.49.x) | Esa es la red Wi-Fi Direct que deja Quick Share. Desde la versión 1.1 la app la ignora, revisa la red cada 5 s y regenera el QR sola; también puedes tocar **🔄 Regenerar QR**. Verifica que la tablet esté conectada a @ETU26. |
 | No detecta los videos que llegan | Revisa `QUICK_SHARE_FOLDER_LIKE` (ver tabla) y que diste permiso "Permitir todo" a videos. |
 | El QR no abre en el celular del invitado | No están en la misma red, o la red tiene aislamiento de clientes. Usa el hotspot del kiosko. |
 | En iPhone no se guarda en la galería | Safari lo guarda en Archivos → Descargas; desde ahí "Compartir → Guardar video". |

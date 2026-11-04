@@ -4,6 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_screen"
+    android:fitsSystemWindows="true"
     android:orientation="vertical">
 
     <!-- Encabezado: hashtag y contador del día -->
@@ -361,6 +362,16 @@
                             android:elevation="8dp"
                             android:padding="12dp"
                             android:scaleType="fitCenter" />
+
+                        <Button
+                            android:id="@+id/regenerateQrButton"
+                            style="@style/KioskButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:minHeight="48dp"
+                            android:text="@string/regenerate_qr"
+                            android:textSize="14sp" />
                     </LinearLayout>
                 </LinearLayout>
 

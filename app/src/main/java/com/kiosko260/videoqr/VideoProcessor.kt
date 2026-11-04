@@ -117,8 +117,9 @@ class VideoProcessor(private val context: Context) {
                 .setEffects(Effects(emptyList(), videoEffects))
                 .build()
 
-            val sequences = mutableListOf(EditedMediaItemSequence.Builder(listOf(video)).build())
-            if (songItems.isNotEmpty()) sequences += EditedMediaItemSequence.Builder(songItems).build()
+            // Secuencia de solo video + secuencia de solo audio (la canción).
+            val sequences = mutableListOf(EditedMediaItemSequence.withVideoFrom(listOf(video)))
+            if (songItems.isNotEmpty()) sequences += EditedMediaItemSequence.withAudioFrom(songItems)
             return Composition.Builder(sequences)
                 // Los videos HDR (muy comunes en Samsung/iPhone) se convierten a SDR con buen mapeo de
                 // tonos; si no, se verían lavados en WhatsApp, Instagram y en la mayoría de celulares.
