@@ -1,12 +1,15 @@
 package com.kiosko260.videoqr
 
 import fi.iki.elonen.NanoHTTPD
+import fi.iki.elonen.NanoHTTPD.ClientHandler
 import fi.iki.elonen.NanoHTTPD.IHTTPSession
 import fi.iki.elonen.NanoHTTPD.Response
 import java.io.File
 import java.io.FileInputStream
 import java.io.FilterInputStream
 import java.io.InputStream
+import java.io.PushbackInputStream
+import java.net.Socket
 
 /**
  * Servidor HTTP dentro del celular del kiosko.
@@ -21,9 +24,72 @@ class VideoServer(
     private val hashtag: () -> String,
     /** Se llama (en el hilo del servidor) cuando un invitado terminó de descargar un video. */
     private val onDownloaded: (String) -> Unit = {},
+    /** Se llama por cada petición atendida, para el diagnóstico de conexiones en la tablet. */
+    private val onRequest: (RequestInfo) -> Unit = {},
 ) : NanoHTTPD(port) {
 
+    /** Una visita de un invitado: IP, tipo de equipo, qué pidió y con qué resultado. */
+    data class RequestInfo(val ip: String, val device: String, val path: String, val status: Int)
+
+    /**
+     * Safari y Chrome recientes intentan primero "https://" aunque el QR diga "http://". El
+     * servidor no habla HTTPS y, sin esto, esa conexión se quedaba colgada ~5 s hasta que el
+     * navegador probaba con "http://" (página "trabada" en Android y, en iPhone, a veces error).
+     * Si el primer byte es el saludo TLS (0x16) se cierra al instante y el navegador pasa a
+     * "http://" de inmediato.
+     */
+    override fun createClientHandler(socket: Socket, inputStream: InputStream): ClientHandler {
+        val pushback = PushbackInputStream(inputStream, 1)
+        val guarded = object : FilterInputStream(pushback) {
+            private var checked = false
+
+            private fun isTls(): Boolean {
+                if (checked) return false
+                checked = true
+                val first = pushback.read()
+                if (first < 0) return false
+                if (first == TLS_HANDSHAKE) {
+                    runCatching { socket.close() }
+                    return true
+                }
+                pushback.unread(first)
+                return false
+            }
+
+            override fun read(): Int = if (isTls()) -1 else super.read()
+            override fun read(b: ByteArray, off: Int, len: Int): Int = if (isTls()) -1 else super.read(b, off, len)
+        }
+        return super.createClientHandler(socket, guarded)
+    }
+
     override fun serve(session: IHTTPSession): Response {
+        val response = route(session)
+        runCatching {
+            // Las piezas del video (rangos) se omiten para no llenar el diagnóstico.
+            if (!session.headers.containsKey("range")) {
+                onRequest(
+                    RequestInfo(
+                        ip = session.remoteIpAddress.orEmpty(),
+                        device = deviceName(session.headers["user-agent"].orEmpty()),
+                        path = session.uri,
+                        status = response.status.requestStatus,
+                    )
+                )
+            }
+        }
+        return response
+    }
+
+    private fun deviceName(userAgent: String): String = when {
+        "iPhone" in userAgent -> "iPhone"
+        "iPad" in userAgent -> "iPad"
+        "Android" in userAgent -> "Android"
+        "Macintosh" in userAgent -> "Mac"
+        "Windows" in userAgent -> "Windows"
+        else -> "Otro"
+    }
+
+    private fun route(session: IHTTPSession): Response {
         val path = session.uri
         return when {
             path.startsWith("/v/") -> page(path.removePrefix("/v/"))
@@ -47,6 +113,7 @@ class VideoServer(
             <!doctype html>
             <html lang="es"><head>
             <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+            <link rel="icon" href="data:,">
             <title>Tu video</title>
             <style>
               body{margin:0;font-family:system-ui,sans-serif;color:#fff;text-align:center;padding:16px;
@@ -81,7 +148,7 @@ class VideoServer(
               <span id="label">Descarga aquí</span>
             </a>
             <div class="bar" id="bar"><div id="barfill"></div></div>
-            <video src="/f/$id.mp4" poster="/t/$id.jpg" controls playsinline loop></video>
+            <video src="/f/$id.mp4" poster="/t/$id.jpg" preload="none" controls playsinline loop></video>
             <p>Súbelo como Reel o TikTok 🔥 Ábrelo desde tu galería (en iPhone: Archivos &rarr; Descargas &rarr; Compartir &rarr; Guardar video) y etiqueta ${hashtag()}</p>
             <script>
             (function(){
@@ -205,5 +272,6 @@ class VideoServer(
     private companion object {
         const val MIME_MP4 = "video/mp4"
         val SHORT_CODE = Regex("^/[A-Za-z0-9]{4}/?$")
+        const val TLS_HANDSHAKE = 0x16
     }
 }

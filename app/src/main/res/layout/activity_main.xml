@@ -609,6 +609,19 @@
                     android:textColor="@color/blanco_suave"
                     android:textSize="13sp" />
 
+                <!-- Diagnóstico: qué celulares llegaron al servidor (si un iPhone no aparece, no llegó por la red) -->
+                <TextView
+                    android:id="@+id/connectionsInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_card"
+                    android:fontFamily="monospace"
+                    android:padding="10dp"
+                    android:textColor="@color/blanco"
+                    android:textIsSelectable="true"
+                    android:textSize="12sp" />
+
                 <TextView
                     android:id="@+id/folderInfo"
                     android:layout_width="match_parent"

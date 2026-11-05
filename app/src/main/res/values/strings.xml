@@ -42,7 +42,7 @@
     <string name="wifi_title_hotspot">1️⃣ Conéctate al Wi-Fi del kiosko</string>
     <string name="wifi_ssid">Red: %1$s</string>
     <string name="wifi_password">Clave: %1$s</string>
-    <string name="wifi_hint">2️⃣ Luego escanea el QR del video. Si no abre, apaga los datos móviles un momento.</string>
+    <string name="wifi_hint">2️⃣ Luego escanea el QR del video. iPhone: si sale \"Sin conexión a internet\" o una ventana para iniciar sesión, toca \"Cancelar\" → \"Usar sin internet\". Si no abre, apaga los datos móviles un momento.</string>
     <string name="quick_share_switch">Opción extra: compartir con Quick Share (QR / enlace de Samsung)</string>
     <string name="quick_share_button">👉 📤 Compartir este video con Quick Share</string>
     <string name="quick_share_hint">Se abre Quick Share con el video listo. Ahí elige:\n• \"Código QR\" o \"Copiar enlace\" (Samsung lo sube a su nube: necesita internet).\n• Un dispositivo cercano (funciona sin internet).</string>
@@ -50,6 +50,11 @@
     <string name="regenerate_qr">🔄 Regenerar QR</string>
     <string name="qr_regenerated">QR regenerado: %1$s</string>
     <string name="qr_no_network">Sin red: conecta la tablet al Wi-Fi del evento o usa el hotspot.</string>
+    <string name="service_channel">Servidor de descargas</string>
+    <string name="service_title">Kiosko 360 activo</string>
+    <string name="service_text">Sirviendo los videos a los invitados en la red local</string>
+    <string name="connections_title">📊 Últimas visitas de invitados:</string>
+    <string name="connections_empty">📊 Aún no se ha conectado ningún celular. Si un invitado escanea y aquí no aparece, su celular no está llegando a la tablet por la red.</string>
     <string name="speed_label">Efecto de velocidad</string>
     <string name="music_label">Canción</string>
     <string name="music_random">🎲 Aleatoria</string>

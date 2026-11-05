@@ -13,8 +13,8 @@ android {
         minSdk = 29
         // Se mantiene en 35 para no cambiar el comportamiento de la app en la tablet.
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     buildTypes {

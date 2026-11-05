@@ -218,6 +218,29 @@ Para que el video se acepte solo y la red del kiosko se apague/encienda sin inte
 - Se recuerda aunque cierres la app. Si lo dejas vacío, el video sale sin hashtag.
 - El valor inicial es `HASHTAG` de `Config.kt` (`#etu2026`).
 
+## Si los celulares no pueden abrir la página (sobre todo iPhone)
+
+**Lo que corrige la app (versión 1.2):**
+- **Rechazo inmediato de "https://"**: Safari y Chrome recientes intentan primero `https://` aunque el QR diga `http://`. Antes el servidor se quedaba ~5 s esperando y el navegador "se trababa" (en iPhone a veces terminaba en error). Ahora la conexión se cierra al instante y el navegador pasa a `http://` sin espera.
+- **Servicio en primer plano + Wi-Fi de baja latencia**: Android/Samsung ya no congelan el servidor ni ponen la antena Wi-Fi de la tablet en ahorro de energía (causa típica de páginas que cargan lento).
+- **La página ya no precarga el video** (`preload="none"`): con varios celulares a la vez, cada uno solo descarga cuando lo pide. La página carga al instante.
+- **Diagnóstico en la tablet**: al final de la pestaña *En vivo* aparecen las **últimas visitas** (hora, iPhone/Android, IP, qué hizo). Si un iPhone escanea y **no aparece ahí**, el problema está en la red o en el iPhone, no en la app.
+
+**Lo que hay que revisar en el iPhone del invitado:**
+1. Al conectarse a @ETU26 puede aparecer *"Sin conexión a internet"* o una ventana para *iniciar sesión*: tocar **Cancelar → Usar sin internet**. Si elige *"Usar otra red"*, el iPhone se desconecta de @ETU26.
+2. Si aun así no abre: **apagar los datos móviles** un momento (y *Ajustes → Celular → Asistencia Wi-Fi* apagado).
+3. Escribir la dirección con `http://` delante si la tecleó a mano.
+
+**Lo que hay que revisar en el Access Point (@ETU26):**
+- **Aislamiento de clientes / AP isolation / "Wireless isolation"** apagado (en todas las bandas, 2.4 y 5 GHz).
+- Si el equipo tiene una función de "**página de aviso sin internet**" o *portal cautivo*, desactivarla: hace que los iPhone abran la ventana de inicio de sesión.
+- **Reservar una IP fija (DHCP reservation)** para la tablet: así la dirección del QR no cambia cuando se reinicia el Access Point.
+- Banda: si hay iPhones viejos, deja activa la de 2.4 GHz además de 5 GHz.
+
+**Lo que hay que revisar en la tablet:**
+- *Ajustes → Aplicaciones → Kiosko 360 → Batería* → **Sin restricciones**.
+- *Ajustes → Conexiones → Wi-Fi → ⋮ → Wi-Fi inteligente*: apagar **"Cambiar a datos móviles"** y **"Cambiar a una mejor red Wi-Fi"**, y **olvidar las otras redes guardadas** del lugar: si no, la tablet puede salirse de @ETU26 porque "no tiene internet".
+
 ## 4. Preparar el kiosko el día del evento
 
 1. **Quick Share**: en el kiosko, Ajustes → Google → Dispositivos y uso compartido → Quick Share (o en Samsung: panel rápido → Quick Share) → "Quién puede compartir contigo" = **Todos** (o "Todos durante 10 minutos").

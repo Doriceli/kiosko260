@@ -15,6 +15,12 @@
 
     <!-- Servidor local para la descarga por QR. -->
     <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Servicio en primer plano: mantiene vivo el servidor y el Wi-Fi en baja latencia. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- Android 11+: poder ver si Quick Share está instalado para abrirlo directo. -->
@@ -75,6 +81,16 @@
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
+        </service>
+
+        <!-- Mantiene activo el servidor local de descargas mientras se usa el kiosko. -->
+        <service
+            android:name=".KioskService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Servidor web local (LAN sin internet) para que los invitados descarguen su video" />
         </service>
 
         <!-- Permite pasar los videos de Download/PROCESADOS a Quick Share. -->

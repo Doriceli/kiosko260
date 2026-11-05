@@ -53,6 +53,8 @@ data class KioskState(
     val networkMode: NetworkMode = Config.DEFAULT_NETWORK_MODE,
     /** IP local de la tablet (null = sin red local). */
     val localIp: String? = null,
+    /** Últimas visitas de invitados al servidor (diagnóstico): la más nueva primero. */
+    val connections: List<String> = emptyList(),
     /** Hora (System.currentTimeMillis) en que la red se apagará sola para volver a Quick Share. */
     val hotspotOffAt: Long? = null,
 )
@@ -212,9 +214,25 @@ class KioskoApp : Application() {
             Config.SERVER_PORT,
             hashtag = { hashtag },
             onDownloaded = { scope.launch { onVideoDownloaded() } },
+            onRequest = { info -> scope.launch { logConnection(info) } },
         ).also {
-            runCatching { it.start() }.onFailure { e -> Log.e(TAG, "No se pudo iniciar el servidor", e) }
+            // 15 s de espera (antes 5 s) para celulares lentos o con mala señal.
+            runCatching { it.start(SERVER_SOCKET_TIMEOUT_MS, true) }
+                .onFailure { e -> Log.e(TAG, "No se pudo iniciar el servidor", e) }
         }
+    }
+
+    /** Guarda las últimas visitas para ver en la tablet qué celulares sí llegan al servidor. */
+    private fun logConnection(info: VideoServer.RequestInfo) {
+        val time = java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"))
+        val what = when {
+            info.path.startsWith("/f/") -> "descargó el video"
+            info.path.startsWith("/t/") -> "vio la portada"
+            else -> "abrió la página"
+        }
+        val ok = if (info.status < 400) "✅" else "⚠️ ${info.status}"
+        val line = "$time · ${info.device} ${info.ip} · $what $ok"
+        _state.update { it.copy(connections = (listOf(line) + it.connections).take(MAX_CONNECTIONS)) }
     }
 
     /** Enlace de descarga. Se arma con la IP local del kiosko: no se consulta nada en internet. */
@@ -392,6 +410,8 @@ class KioskoApp : Application() {
 
     private companion object {
         const val TAG = "KioskoApp"
+        const val SERVER_SOCKET_TIMEOUT_MS = 15_000
+        const val MAX_CONNECTIONS = 8
         const val KEY_LAYOUT = "diseno"
         const val KEY_HASHTAG = "hashtag"
         const val KEY_EVENT_NAME = "evento_nombre"

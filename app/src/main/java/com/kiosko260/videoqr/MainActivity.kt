@@ -160,6 +160,7 @@ class MainActivity : AppCompatActivity() {
 
         handleShareIntent(intent)
         ensurePermissionAndWatch()
+        KioskService.start(this)
     }
 
     /** Solo pide el permiso: la red se enciende sola cuando llega un video (o con "Mostrar QR"). */
@@ -375,6 +376,9 @@ class MainActivity : AppCompatActivity() {
         binding.wifiRow.visibility = if (hotspot != null) View.VISIBLE else View.GONE
         updateNetworkInfo(state)
         updateModeText(state)
+        binding.connectionsInfo.text =
+            if (state.connections.isEmpty()) getString(R.string.connections_empty)
+            else getString(R.string.connections_title) + "\n" + state.connections.joinToString("\n")
 
         if (state.libraryVersion != shownLibraryVersion) {
             shownLibraryVersion = state.libraryVersion
@@ -441,7 +445,12 @@ class MainActivity : AppCompatActivity() {
 
     /** Pide de una sola vez todos los permisos que falten (Android no admite dos solicitudes a la vez). */
     private fun ensurePermissionAndWatch() {
-        val wanted = mediaPermissions.toList() + listOfNotNull(hotspotPermission.takeIf { app.useOwnNetwork })
+        val wanted = mediaPermissions.toList() +
+            listOfNotNull(
+                hotspotPermission.takeIf { app.useOwnNetwork },
+                // Para ver la notificación "Kiosko 360 activo" (el servicio funciona igual sin ella).
+                Manifest.permission.POST_NOTIFICATIONS.takeIf { Build.VERSION.SDK_INT >= 33 },
+            )
         val missing = wanted.filterNot(::hasPermission)
         if (missing.isNotEmpty()) {
             permissionLauncher.launch(missing.toTypedArray())
